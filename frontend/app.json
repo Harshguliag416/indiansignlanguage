@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "ISL Bridge",
+    "slug": "isl-bridge",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#07070F"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.teamalpha.islbridge"
+    },
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#07070F"
+      },
+      "package": "com.teamalpha.islbridge"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ISL Bridge needs camera to detect hand signs.",
+          "microphonePermission": "ISL Bridge needs microphone for speech recognition.",
+          "recordAudioAndroid": true
+        }
+      ]
+    ]
+  }
+}
