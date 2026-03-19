@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -6,57 +6,38 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
+import { AppContext } from '../AppContext';
 
 const { width, height } = Dimensions.get('window');
 
-export default function SplashScreen({ navigation, theme }) {
-  const logoAnim    = useRef(new Animated.Value(0)).current;
-  const teamAnim    = useRef(new Animated.Value(0)).current;
+export default function SplashScreen({ navigation }) {
+  const { theme } = useContext(AppContext);
+  const logoAnim = useRef(new Animated.Value(0)).current;
+  const teamAnim = useRef(new Animated.Value(0)).current;
   const taglineAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim   = useRef(new Animated.Value(0.6)).current;
+  const scaleAnim = useRef(new Animated.Value(0.6)).current;
 
   useEffect(() => {
-    // sequence: logo fades+scales in → team name → tagline → navigate
     Animated.sequence([
-      // logo appears
       Animated.parallel([
-        Animated.timing(logoAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 4,
-          useNativeDriver: true,
-        }),
+        Animated.timing(logoAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 4, useNativeDriver: true }),
       ]),
-      // team name appears
-      Animated.timing(teamAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      // tagline appears
-      Animated.timing(taglineAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      // hold for 1 second
-      Animated.delay(1000),
-    ]).start(() => {
-      navigation.replace('Onboarding');
-    });
-  }, []);
+      Animated.timing(teamAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(taglineAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+    ]).start();
+
+    const timer = setTimeout(() => {
+      navigation.replace('Login');
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [logoAnim, navigation, scaleAnim, taglineAnim, teamAnim]);
 
   return (
-    <View style={[styles.root, { backgroundColor: theme.bg }]}>
-
-      {/* Background glow */}
+    <View style={[styles.root, { backgroundColor: theme.bg }]}> 
       <View style={[styles.glow, { backgroundColor: theme.accentA + '15' }]} />
 
-      {/* Logo circle */}
       <Animated.View
         style={[
           styles.logoCircle,
@@ -67,32 +48,21 @@ export default function SplashScreen({ navigation, theme }) {
             transform: [{ scale: scaleAnim }],
           },
         ]}>
-        <Text style={styles.logoEmoji}>🤟</Text>
         <Text style={[styles.logoText, { color: theme.accentA }]}>ISL</Text>
         <Text style={[styles.logoSub, { color: theme.text }]}>Bridge</Text>
       </Animated.View>
 
-      {/* Team name */}
       <Animated.View style={{ opacity: teamAnim, alignItems: 'center' }}>
         <View style={[styles.teamBadge, { borderColor: theme.accentA, backgroundColor: theme.card }]}>
-          <Text style={[styles.teamText, { color: theme.accentA }]}>⚡ TEAM ALPHA</Text>
+          <Text style={[styles.teamText, { color: theme.accentA }]}>TEAM ALPHA</Text>
         </View>
       </Animated.View>
 
-      {/* Tagline */}
-      <Animated.Text
-        style={[
-          styles.tagline,
-          { color: theme.subtext, opacity: taglineAnim },
-        ]}>
-        Every voice deserves to be heard.
+      <Animated.Text style={[styles.tagline, { color: theme.subtext, opacity: taglineAnim }]}>
+        Smart communication for deaf and hearing users.
       </Animated.Text>
 
-      {/* Bottom credit */}
-      <Text style={[styles.credit, { color: theme.muted }]}>
-        KCCITM · B.Tech CSE · AKTU
-      </Text>
-
+      <Text style={[styles.credit, { color: theme.muted }]}>Built by Team ALPHA</Text>
     </View>
   );
 }
@@ -118,15 +88,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
     shadowColor: '#00F5D4',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
-  },
-  logoEmoji: {
-    fontSize: 44,
   },
   logoText: {
     fontSize: 28,
@@ -134,7 +101,7 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
   },
   logoSub: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     letterSpacing: 2,
   },
@@ -145,14 +112,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   teamText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
-    letterSpacing: 3,
+    letterSpacing: 2,
   },
   tagline: {
     fontSize: 13,
-    fontStyle: 'italic',
+    textAlign: 'center',
     letterSpacing: 0.5,
+    paddingHorizontal: 24,
   },
   credit: {
     position: 'absolute',

@@ -18,7 +18,9 @@
     "android": {
       "permissions": [
         "CAMERA",
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -37,7 +39,13 @@
           "microphonePermission": "ISL Bridge needs microphone for speech recognition.",
           "recordAudioAndroid": true
         }
-      ]
-    ]
+      ],
+      "expo-speech-recognition"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8784283a-f393-40c8-b24d-fc07f461e0da"
+      }
+    }
   }
 }

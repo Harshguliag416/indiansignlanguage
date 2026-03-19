@@ -1,0 +1,79 @@
+﻿[
+  {
+    "id": "isltranslate",
+    "name": "ISLTranslate",
+    "task_types": ["phrases", "sentences", "translation"],
+    "format": ["video", "text"],
+    "source_url": "https://github.com/Exploration-Lab/ISLTranslate",
+    "license_note": "Check repository license and dataset terms before redistribution.",
+    "recommended_use": "Primary public source for phrase/sentence-level ISL-English learning.",
+    "expected_local_path": "public_datasets/isltranslate",
+    "download_status": "not_downloaded"
+  },
+  {
+    "id": "isl_csltr",
+    "name": "ISL-CSLTR",
+    "task_types": ["sentences", "continuous_signing"],
+    "format": ["video", "frames", "text"],
+    "source_url": "https://data.mendeley.com/datasets/kcmpdxky7p/1",
+    "license_note": "Check dataset page terms and citation guidance before reuse.",
+    "recommended_use": "Sentence-level sequence training and evaluation.",
+    "expected_local_path": "public_datasets/isl_csltr",
+    "download_status": "not_downloaded"
+  },
+  {
+    "id": "islvt",
+    "name": "ISLVT",
+    "task_types": ["sentences", "translation"],
+    "format": ["video", "text"],
+    "source_url": "https://data.mendeley.com/datasets/98mzk82wbb/1",
+    "license_note": "Check dataset page terms and citation guidance before reuse.",
+    "recommended_use": "Supplementary sentence/video-text training source.",
+    "expected_local_path": "public_datasets/islvt",
+    "download_status": "not_downloaded"
+  },
+  {
+    "id": "isl_alphabet_github",
+    "name": "Indian Sign Language Alphabet Dataset",
+    "task_types": ["letters"],
+    "format": ["images"],
+    "source_url": "https://github.com/ayeshatasnim-h/Indian-Sign-Language-dataset",
+    "license_note": "Check repository license before reuse.",
+    "recommended_use": "Extra alphabet-only data for the letter specialist model.",
+    "expected_local_path": "public_datasets/isl_alphabet_github",
+    "download_status": "not_downloaded"
+  },
+  {
+    "id": "isl_real_life_words",
+    "name": "Indian Sign Language Real-life Words",
+    "task_types": ["words", "phrases"],
+    "format": ["images"],
+    "source_url": "https://data.mendeley.com/datasets/s6kgb6r3ss",
+    "license_note": "Check dataset page terms and citation guidance before reuse.",
+    "recommended_use": "High-value static words from multiple individuals.",
+    "expected_local_path": "public_datasets/isl_real_life_words",
+    "download_status": "not_downloaded"
+  },
+  {
+    "id": "isl_common_phrases",
+    "name": "Common Phrases in Indian Sign Language",
+    "task_types": ["phrases"],
+    "format": ["images"],
+    "source_url": "https://data.mendeley.com/datasets/y8vg69brn2",
+    "license_note": "Check dataset page terms and citation guidance before reuse.",
+    "recommended_use": "Static phrase classifier expansion.",
+    "expected_local_path": "public_datasets/isl_common_phrases",
+    "download_status": "not_downloaded"
+  },
+  {
+    "id": "isl_everyday_phrases_words",
+    "name": "Dataset for everyday phrases and words in Indian sign language",
+    "task_types": ["phrases", "words"],
+    "format": ["images"],
+    "source_url": "https://data.mendeley.com/datasets/w7fgy7jvs8/3",
+    "license_note": "CC BY 4.0 on dataset page.",
+    "recommended_use": "Static phrase/word expansion with 44 phrase classes.",
+    "expected_local_path": "public_datasets/isl_everyday_phrases_words",
+    "download_status": "not_downloaded"
+  }
+]

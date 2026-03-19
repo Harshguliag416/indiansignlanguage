@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import SplashScreen    from './screens/SplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import PermissionScreen from './screens/PermissionScreen';
-import ModeAScreen     from './screens/ModeAScreen';
-import ModeBScreen     from './screens/ModeBScreen';
+import LoginScreen from './screens/LoginScreen';
+import MainTabs from './screens/MainTabs';
+import { AppContext } from './AppContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,8 +24,10 @@ export const THEME = {
     muted:       '#2A2A4A',
     accentA:     '#00F5D4',
     accentB:     '#F72585',
+    accentC:     '#B5179E',
     accentABg:   '#001A12',
     accentBBg:   '#1A0A12',
+    accentCBg:   '#2A0F2A',
     placeholder: '#2A2A4A',
     header:      '#07070F',
     headerText:  '#FFFFFF',
@@ -40,8 +44,10 @@ export const THEME = {
     muted:       '#AAAACC',
     accentA:     '#008B7A',
     accentB:     '#C2185B',
+    accentC:     '#9C27B0',
     accentABg:   '#E0F5F2',
     accentBBg:   '#FCE4EC',
+    accentCBg:   '#F3E5F5',
     placeholder: '#AAAACC',
     header:      '#FFFFFF',
     headerText:  '#0A0A1A',
@@ -66,33 +72,23 @@ export default function App() {
   };
 
   return (
+    <SafeAreaProvider>
+      <AppContext.Provider value={sharedProps}>
     <NavigationContainer>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{ headerShown: false }}>
 
-        <Stack.Screen name="Splash">
-          {props => <SplashScreen {...props} {...sharedProps} />}
-        </Stack.Screen>
-
-        <Stack.Screen name="Onboarding">
-          {props => <OnboardingScreen {...props} {...sharedProps} />}
-        </Stack.Screen>
-
-        <Stack.Screen name="Permission">
-          {props => <PermissionScreen {...props} {...sharedProps} />}
-        </Stack.Screen>
-
-        <Stack.Screen name="ModeA">
-          {props => <ModeAScreen {...props} {...sharedProps} />}
-        </Stack.Screen>
-
-        <Stack.Screen name="ModeB">
-          {props => <ModeBScreen {...props} {...sharedProps} />}
-        </Stack.Screen>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Permission" component={PermissionScreen} />
+          <Stack.Screen name="Main" component={MainTabs} />
 
       </Stack.Navigator>
     </NavigationContainer>
+      </AppContext.Provider>
+    </SafeAreaProvider>
   );
 }

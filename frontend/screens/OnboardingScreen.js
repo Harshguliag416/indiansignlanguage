@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -6,162 +6,119 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  Dimensions,
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { AppContext } from '../AppContext';
 
 const LANG = {
   en: {
-    welcome:    'Welcome to ISL Bridge',
-    subtitle:   'Choose how you want to communicate',
-    modeATitle: 'Deaf → Hearing',
-    modeADesc:  'Sign in front of camera. AI detects your gesture and speaks it aloud for the hearing person.',
-    modeBTitle: 'Hearing → Deaf',
-    modeBDesc:  'Speak into the mic. Your words appear as large clear text for the deaf person to read.',
-    bothTitle:  'Both Modes',
-    bothDesc:   'Switch between signing and speaking anytime during the conversation.',
-    continueBtn:'Continue',
-    langSwitch: 'हिंदी में देखें',
-    themeSwitch: 'Light Mode',
-    selectMode: 'Select a mode to continue',
+    team: 'TEAM ALPHA',
+    welcome: 'Who are you?',
+    subtitle: 'Choose the communication role that fits you best. The app will open in that mode and only ask for the permissions needed for it.',
+    deafTitle: 'Deaf / Sign User',
+    deafDesc: 'Use sign-to-speech so your signs can be spoken for a hearing person.',
+    hearingTitle: 'Hearing / Speaker',
+    hearingDesc: 'Use speech-to-text so your spoken words appear for a deaf person to read.',
+    bothTitle: 'Both',
+    bothDesc: 'Keep both modes available and switch during the conversation.',
+    continueBtn: 'Continue',
+    selectMode: 'Select your role to continue',
   },
   hi: {
-    welcome:    'ISL Bridge में स्वागत है',
-    subtitle:   'बताएं आप कैसे बात करना चाहते हैं',
-    modeATitle: 'बधिर → सुनने वाला',
-    modeADesc:  'कैमरे के सामने साइन करें। AI आपका संकेत पहचानकर सुनने वाले के लिए बोलेगा।',
-    modeBTitle: 'सुनने वाला → बधिर',
-    modeBDesc:  'माइक में बोलें। आपके शब्द बड़े अक्षरों में दिखेंगे जो बधिर व्यक्ति पढ़ सकें।',
-    bothTitle:  'दोनों मोड',
-    bothDesc:   'बातचीत के दौरान कभी भी साइन और बोलने के बीच स्विच करें।',
-    continueBtn:'आगे बढ़ें',
-    langSwitch: 'Switch to English',
-    themeSwitch: 'लाइट मोड',
-    selectMode: 'आगे बढ़ने के लिए मोड चुनें',
+    team: 'TEAM ALPHA',
+    welcome: 'Aap kaun hain?',
+    subtitle: 'Apni communication role chunen. App ussi ke hisaab se mode set karega aur sirf zaroori permissions maangega.',
+    deafTitle: 'Badhir / Sign User',
+    deafDesc: 'Sign-to-speech mode use karein taa ki aapke signs hearing user ke liye bole ja saken.',
+    hearingTitle: 'Hearing / Speaker',
+    hearingDesc: 'Speech-to-text mode use karein taa ki aapki awaaz text ban kar saamne dikhe.',
+    bothTitle: 'Dono',
+    bothDesc: 'Dono modes available rakhein aur zarurat par switch karein.',
+    continueBtn: 'Aage badhein',
+    selectMode: 'Aage badhne ke liye role chunen',
   },
 };
 
-export default function OnboardingScreen({
-  navigation,
-  theme,
-  isDark,
-  setIsDark,
-  lang,
-  setLang,
-}) {
+export default function OnboardingScreen({ navigation }) {
   const [selectedMode, setSelectedMode] = useState(null);
+  const { theme, lang } = useContext(AppContext);
   const t = LANG[lang];
 
   const modes = [
     {
       id: 'A',
-      icon: '🤟',
-      title: t.modeATitle,
-      desc: t.modeADesc,
+      badge: 'A',
+      title: t.deafTitle,
+      desc: t.deafDesc,
       accent: theme.accentA,
       accentBg: theme.accentABg,
       screen: 'ModeA',
     },
     {
       id: 'B',
-      icon: '🎤',
-      title: t.modeBTitle,
-      desc: t.modeBDesc,
+      badge: 'B',
+      title: t.hearingTitle,
+      desc: t.hearingDesc,
       accent: theme.accentB,
       accentBg: theme.accentBBg,
       screen: 'ModeB',
     },
     {
       id: 'BOTH',
-      icon: '↔️',
+      badge: 'AB',
       title: t.bothTitle,
       desc: t.bothDesc,
-      accent: theme.accentA,
-      accentBg: theme.accentABg,
+      accent: theme.accentC,
+      accentBg: theme.accentCBg,
       screen: 'ModeA',
     },
   ];
 
   const handleContinue = () => {
-    if (!selectedMode) return;
-    const mode = modes.find(m => m.id === selectedMode);
+    if (!selectedMode) {
+      return;
+    }
+
+    const mode = modes.find((item) => item.id === selectedMode);
     navigation.navigate('Permission', {
-      targetScreen: mode.screen,
+      targetScreen: 'Main',
       mode: selectedMode,
+      initialTab: mode.screen,
     });
   };
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]}>
-
-      {/* Top bar */}
-      <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
-        <View style={styles.logoRow}>
-          <Text style={[styles.logoAccent, { color: theme.accentA }]}>⚡</Text>
-          <Text style={[styles.logoName, { color: theme.text }]}>ISL Bridge</Text>
-          <Text style={[styles.logoTeam, { color: theme.subtext }]}>Team ALPHA</Text>
-        </View>
-        <View style={styles.topBtns}>
-          {/* Theme toggle */}
-          <TouchableOpacity
-            style={[styles.topBtn, { borderColor: theme.border, backgroundColor: theme.card }]}
-            onPress={() => setIsDark(d => !d)}>
-            <Text style={styles.topBtnIcon}>{isDark ? '☀️' : '🌙'}</Text>
-          </TouchableOpacity>
-          {/* Lang toggle */}
-          <TouchableOpacity
-            style={[styles.topBtn, { borderColor: theme.accentA, backgroundColor: theme.card }]}
-            onPress={() => setLang(l => l === 'en' ? 'hi' : 'en')}>
-            <Text style={[styles.topBtnText, { color: theme.accentA }]}>
-              {lang === 'en' ? 'हि' : 'EN'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
+    <SafeAreaView style={[styles.root, { backgroundColor: theme.bg }]}> 
       <ScrollView contentContainerStyle={styles.scroll}>
-
-        {/* Header */}
+        <Text style={[styles.team, { color: theme.accentA }]}>{t.team}</Text>
         <Text style={[styles.welcome, { color: theme.text }]}>{t.welcome}</Text>
         <Text style={[styles.subtitle, { color: theme.subtext }]}>{t.subtitle}</Text>
 
-        {/* Mode cards */}
-        {modes.map(mode => (
-          <TouchableOpacity
-            key={mode.id}
-            onPress={() => setSelectedMode(mode.id)}
-            style={[
-              styles.modeCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: selectedMode === mode.id ? mode.accent : theme.border,
-                borderWidth: selectedMode === mode.id ? 2 : 1,
-              },
-            ]}>
+        {modes.map((mode) => {
+          const selected = selectedMode === mode.id;
+          return (
+            <TouchableOpacity
+              key={mode.id}
+              onPress={() => setSelectedMode(mode.id)}
+              style={[
+                styles.modeCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: selected ? mode.accent : theme.border,
+                  borderWidth: selected ? 2 : 1,
+                },
+              ]}>
+              <View style={[styles.badge, { backgroundColor: mode.accentBg, borderColor: mode.accent + '40' }]}>
+                <Text style={[styles.badgeText, { color: mode.accent }]}>{mode.badge}</Text>
+              </View>
 
-            {/* Left accent bar */}
-            {selectedMode === mode.id && (
-              <View style={[styles.cardAccentBar, { backgroundColor: mode.accent }]} />
-            )}
+              <View style={styles.modeContent}>
+                <Text style={[styles.modeTitle, { color: selected ? mode.accent : theme.text }]}>{mode.title}</Text>
+                <Text style={[styles.modeDesc, { color: theme.subtext }]}>{mode.desc}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
 
-            <View style={[styles.iconCircle, { backgroundColor: mode.accentBg, borderColor: mode.accent + '40' }]}>
-              <Text style={styles.modeIcon}>{mode.icon}</Text>
-            </View>
-
-            <View style={styles.modeContent}>
-              <Text style={[styles.modeTitle, { color: mode.accent }]}>{mode.title}</Text>
-              <Text style={[styles.modeDesc, { color: theme.subtext }]}>{mode.desc}</Text>
-            </View>
-
-            {selectedMode === mode.id && (
-              <Text style={[styles.checkmark, { color: mode.accent }]}>✓</Text>
-            )}
-
-          </TouchableOpacity>
-        ))}
-
-        {/* Continue button */}
         <TouchableOpacity
           style={[
             styles.continueBtn,
@@ -171,42 +128,76 @@ export default function OnboardingScreen({
             },
           ]}
           onPress={handleContinue}>
-          <Text
-            style={[
-              styles.continueBtnText,
-              { color: selectedMode ? theme.bg : theme.subtext },
-            ]}>
+          <Text style={[styles.continueBtnText, { color: selectedMode ? theme.bg : theme.subtext }]}>
             {selectedMode ? t.continueBtn : t.selectMode}
           </Text>
         </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root:           { flex: 1 },
-  topBar:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
-  logoRow:        { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  logoAccent:     { fontSize: 18 },
-  logoName:       { fontSize: 16, fontWeight: 'bold' },
-  logoTeam:       { fontSize: 10, marginTop: 2 },
-  topBtns:        { flexDirection: 'row', gap: 8 },
-  topBtn:         { width: 36, height: 36, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  topBtnIcon:     { fontSize: 16 },
-  topBtnText:     { fontSize: 13, fontWeight: 'bold' },
-  scroll:         { padding: 16, paddingBottom: 48 },
-  welcome:        { fontSize: 24, fontWeight: 'bold', marginBottom: 6, marginTop: 8 },
-  subtitle:       { fontSize: 13, marginBottom: 24 },
-  modeCard:       { borderRadius: 14, padding: 16, marginBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden', position: 'relative' },
-  cardAccentBar:  { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
-  iconCircle:     { width: 56, height: 56, borderRadius: 28, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  modeIcon:       { fontSize: 26 },
-  modeContent:    { flex: 1 },
-  modeTitle:      { fontSize: 15, fontWeight: 'bold', marginBottom: 4 },
-  modeDesc:       { fontSize: 12, lineHeight: 18 },
-  checkmark:      { fontSize: 20, fontWeight: 'bold', marginLeft: 8 },
-  continueBtn:    { borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8, borderWidth: 1.5 },
-  continueBtnText:{ fontSize: 15, fontWeight: 'bold' },
+  root: { flex: 1 },
+  scroll: { padding: 20, paddingBottom: 40 },
+  team: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  welcome: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modeCard: {
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  badge: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modeContent: {
+    flex: 1,
+  },
+  modeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  modeDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  continueBtn: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1.5,
+  },
+  continueBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
 });
