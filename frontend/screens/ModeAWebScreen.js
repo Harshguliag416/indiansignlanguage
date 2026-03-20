@@ -1,5 +1,5 @@
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import { BACKEND_URL, HAS_BACKEND_URL } from '../config';
+import { BACKEND_URL, BACKEND_URL_CANDIDATES, HAS_BACKEND_URL } from '../config';
 import { WEB_MODE_A_HTML } from '../webModeAHtml';
 
 const frameStyle = {
@@ -15,7 +15,9 @@ export default function ModeAWebScreen() {
     return null;
   }
 
-  const frameHtml = WEB_MODE_A_HTML.replace('__BACKEND_URL__', BACKEND_URL || '');
+  const frameHtml = WEB_MODE_A_HTML
+    .replace('__BACKEND_URL__', BACKEND_URL || '')
+    .replace('__BACKEND_URL_CANDIDATES__', JSON.stringify(BACKEND_URL_CANDIDATES));
 
   return (
     <View style={styles.root}>

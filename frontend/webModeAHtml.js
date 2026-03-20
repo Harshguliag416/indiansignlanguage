@@ -476,12 +476,20 @@ export const WEB_MODE_A_HTML = String.raw`<!DOCTYPE html>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
 <script>
 const BACKEND = '__BACKEND_URL__'.trim();
+const BACKEND_CANDIDATES = __BACKEND_URL_CANDIDATES__;
+const MEDIA_PIPE_TIMEOUT_MS = 12000;
+const MEDIA_PIPE_SOURCES = {
+  hands: [
+    'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js',
+    'https://unpkg.com/@mediapipe/hands/hands.js',
+  ],
+  drawing: [
+    'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js',
+    'https://unpkg.com/@mediapipe/drawing_utils/drawing_utils.js',
+  ],
+};
 const SIGN_TO_HINDI = {
   del: 'Delete',
   nothing: 'Nothing',
@@ -500,10 +508,14 @@ const COPY = {
     cameraReady: 'Camera active - show your hand',
     cameraMissing: 'Show your hand clearly',
     cameraIdle: 'Position your hand in the frame',
+    cameraRequest: 'Allow camera access to start live detection.',
     backendMissing: 'Backend URL missing. Set EXPO_PUBLIC_BACKEND_URL in Vercel or use the production fallback.',
     backendOffline: 'Backend unavailable. Render may be sleeping or the URL may be incorrect.',
+    backendLoading: 'Backend reached. Render is waking up the AI model. Please wait a moment.',
     backendReady: (count) => 'AI Model: Ready (' + count + ' signs)',
     backendNotLoaded: 'AI Model: Connected, but model is not loaded',
+    mediapipeLoading: 'MediaPipe: Loading libraries',
+    mediapipeError: 'MediaPipe libraries could not be loaded',
   },
   hi: {
     outputLabel: 'Pehchana Gaya Sign',
@@ -516,10 +528,14 @@ const COPY = {
     cameraReady: 'Camera active - haath dikhaiye',
     cameraMissing: 'Haath saaf dikhaiye',
     cameraIdle: 'Haath ko frame mein rakhiye',
+    cameraRequest: 'Live detection shuru karne ke liye camera allow karein.',
     backendMissing: 'Backend URL missing hai. Vercel mein EXPO_PUBLIC_BACKEND_URL set karein.',
     backendOffline: 'Backend unavailable hai. Render sleep mode mein ho sakta hai ya URL galat ho sakta hai.',
+    backendLoading: 'Backend mil gaya hai. Render AI model ko warm up kar raha hai. Thoda wait karein.',
     backendReady: (count) => 'AI Model: Ready (' + count + ' signs)',
     backendNotLoaded: 'AI Model connected hai, lekin model load nahi hua',
+    mediapipeLoading: 'MediaPipe: Libraries load ho rahi hain',
+    mediapipeError: 'MediaPipe libraries load nahi ho paayin',
   },
 };
 
@@ -529,7 +545,10 @@ let isDark = true;
 let lastSend = 0;
 let history = [];
 let hands = null;
-let camera = null;
+let activeBackend = BACKEND;
+let activeHandsBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/';
+let frameLoopActive = false;
+let processingFrame = false;
 
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
@@ -558,11 +577,157 @@ function setStatus(id, state, message) {
   label.textContent = message;
 }
 
+function getBackendCandidates() {
+  const seen = new Set();
+  const ordered = [];
+
+  [activeBackend].concat(BACKEND_CANDIDATES || []).forEach(function(candidate) {
+    const normalized = String(candidate || '').trim().replace(/\/+$/, '');
+    if (!normalized || seen.has(normalized)) {
+      return;
+    }
+
+    seen.add(normalized);
+    ordered.push(normalized);
+  });
+
+  return ordered;
+}
+
+function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeout = setTimeout(function() {
+    controller.abort();
+  }, timeoutMs);
+
+  return fetch(url, Object.assign({}, options, { signal: controller.signal })).finally(function() {
+    clearTimeout(timeout);
+  });
+}
+
+async function requestBackend(path, options, timeoutMs) {
+  const candidates = getBackendCandidates();
+  if (candidates.length === 0) {
+    throw new Error('Backend URL missing');
+  }
+
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      const response = await fetchWithTimeout(candidate + path, options, timeoutMs);
+      activeBackend = candidate;
+      return response;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Backend unavailable');
+}
+
+function loadScriptWithFallback(urls, label) {
+  return new Promise(function(resolve, reject) {
+    let index = 0;
+
+    function attempt() {
+      if (index >= urls.length) {
+        reject(new Error(label + ' failed to load from all configured CDNs.'));
+        return;
+      }
+
+      const scriptUrl = urls[index++];
+      const script = document.createElement('script');
+      let settled = false;
+      const timeout = setTimeout(function() {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        script.remove();
+        attempt();
+      }, MEDIA_PIPE_TIMEOUT_MS);
+
+      script.src = scriptUrl;
+      script.async = true;
+      script.onload = function() {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        clearTimeout(timeout);
+        resolve(scriptUrl);
+      };
+      script.onerror = function() {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        clearTimeout(timeout);
+        script.remove();
+        attempt();
+      };
+
+      document.head.appendChild(script);
+    }
+
+    attempt();
+  });
+}
+
+async function loadMediaPipeLibraries() {
+  if (window.Hands && window.drawConnectors && window.drawLandmarks) {
+    return;
+  }
+
+  setStatus('mp', 'warn', text('mediapipeLoading'));
+  const handsScript = await loadScriptWithFallback(MEDIA_PIPE_SOURCES.hands, 'MediaPipe Hands');
+  activeHandsBase = handsScript.replace(/hands\.js(?:\?.*)?$/, '');
+  await loadScriptWithFallback(MEDIA_PIPE_SOURCES.drawing, 'MediaPipe Drawing');
+}
+
+function startFrameLoop() {
+  if (frameLoopActive) {
+    return;
+  }
+
+  frameLoopActive = true;
+
+  async function tick() {
+    if (!frameLoopActive) {
+      return;
+    }
+
+    if (hands && video.readyState >= 2 && !processingFrame) {
+      processingFrame = true;
+      try {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        await hands.send({ image: video });
+      } catch (error) {
+        console.error('MediaPipe frame error:', error);
+      } finally {
+        processingFrame = false;
+      }
+    }
+
+    window.requestAnimationFrame(tick);
+  }
+
+  window.requestAnimationFrame(tick);
+}
+
 async function initMediaPipe() {
   try {
+    document.getElementById('cameraStatus').textContent = text('cameraRequest');
+    setStatus('cam', 'warn', 'Camera: Requesting access');
+    await loadMediaPipeLibraries();
+
     hands = new Hands({
       locateFile: function(file) {
-        return 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/' + file;
+        return activeHandsBase + file;
       },
     });
 
@@ -575,28 +740,35 @@ async function initMediaPipe() {
 
     hands.onResults(onResults);
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Camera access is not available in this browser.');
+    }
+
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'user', width: 640, height: 480 },
     });
     video.srcObject = stream;
 
-    camera = new Camera(video, {
-      onFrame: async function() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        await hands.send({ image: video });
-      },
-      width: 640,
-      height: 480,
-    });
+    await new Promise(function(resolve) {
+      if (video.readyState >= 2) {
+        resolve();
+        return;
+      }
 
-    camera.start();
+      video.onloadedmetadata = function() {
+        resolve();
+      };
+    });
+    await video.play();
+    startFrameLoop();
     setStatus('cam', 'ok', 'Camera: Active');
     setStatus('mp', 'ok', 'MediaPipe: Ready');
     document.getElementById('cameraStatus').textContent = text('cameraReady');
   } catch (error) {
+    setStatus('mp', 'error', text('mediapipeError'));
     setStatus('cam', 'error', 'Camera: ' + error.message);
     document.getElementById('cameraStatus').textContent = 'Camera error: ' + error.message;
+    console.error('Mode A startup error:', error);
   }
 }
 
@@ -626,26 +798,26 @@ function onResults(results) {
 }
 
 async function sendToBackend(landmarks) {
-  if (!BACKEND) {
+  if (getBackendCandidates().length === 0) {
     setNotice(text('backendMissing'));
     setStatus('ai', 'error', 'AI Model: URL missing');
     return;
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(function() {
-    controller.abort();
-  }, 8000);
-
   try {
-    const response = await fetch(BACKEND + '/predict', {
+    const response = await requestBackend('/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ landmarks: landmarks }),
-      signal: controller.signal,
-    });
+    }, 8000);
 
     if (!response.ok) {
+      if (response.status === 503) {
+        setNotice(text('backendLoading'));
+        setStatus('ai', 'warn', 'AI Model: Loading on Render');
+        return;
+      }
+
       throw new Error('Prediction failed with status ' + response.status);
     }
 
@@ -659,8 +831,6 @@ async function sendToBackend(landmarks) {
     setNotice(text('backendOffline'));
     setStatus('ai', 'error', 'AI Model: Backend unavailable');
     console.error('Backend error:', error);
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -774,33 +944,37 @@ function toggleTheme() {
 }
 
 async function checkBackend() {
-  if (!BACKEND) {
+  if (getBackendCandidates().length === 0) {
     setNotice(text('backendMissing'));
     setStatus('ai', 'error', 'AI Model: URL missing');
     return;
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(function() {
-    controller.abort();
-  }, 10000);
-
   try {
-    const response = await fetch(BACKEND + '/health', { signal: controller.signal });
+    const response = await requestBackend('/health', {}, 10000);
     if (!response.ok) {
       throw new Error('Health check failed with status ' + response.status);
     }
 
     const data = await response.json();
-    const ready = data.model === 'loaded';
-    setNotice('');
-    setStatus('ai', ready ? 'ok' : 'warn', ready ? text('backendReady', data.signs_count) : text('backendNotLoaded'));
+    if (data.model === 'loaded') {
+      setNotice('');
+      setStatus('ai', 'ok', text('backendReady', data.signs_count));
+      return;
+    }
+
+    if (data.model === 'loading') {
+      setNotice(text('backendLoading'));
+      setStatus('ai', 'warn', 'AI Model: Loading on Render');
+      return;
+    }
+
+    setNotice(data.error || text('backendNotLoaded'));
+    setStatus('ai', 'warn', text('backendNotLoaded'));
   } catch (error) {
     setNotice(text('backendOffline'));
     setStatus('ai', 'error', 'AI Model: Backend unavailable');
     console.error('Health check error:', error);
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

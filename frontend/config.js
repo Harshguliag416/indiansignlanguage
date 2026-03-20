@@ -1,23 +1,27 @@
 const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
-const PRODUCTION_FALLBACK_BACKEND_URL = 'https://isl-bridge-backend.onrender.com';
+const PRODUCTION_FALLBACK_BACKEND_URLS = [
+  'https://isl-bridge-backend-ol16.onrender.com',
+  'https://isl-bridge-backend.onrender.com',
+];
 
-const resolveBackendUrl = () => {
+const unique = (values) => [...new Set(values.filter(Boolean))];
+
+const resolveBackendUrls = () => {
   const explicitUrl = process.env.EXPO_PUBLIC_BACKEND_URL?.trim();
   if (explicitUrl) {
-    return trimTrailingSlash(explicitUrl);
+    return [trimTrailingSlash(explicitUrl)];
   }
 
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://127.0.0.1:5000';
+      return ['http://127.0.0.1:5000'];
     }
-
-    return PRODUCTION_FALLBACK_BACKEND_URL;
   }
 
-  return PRODUCTION_FALLBACK_BACKEND_URL;
+  return unique(PRODUCTION_FALLBACK_BACKEND_URLS.map(trimTrailingSlash));
 };
 
-export const BACKEND_URL = resolveBackendUrl();
-export const HAS_BACKEND_URL = Boolean(BACKEND_URL);
+export const BACKEND_URL_CANDIDATES = resolveBackendUrls();
+export const BACKEND_URL = BACKEND_URL_CANDIDATES[0] || '';
+export const HAS_BACKEND_URL = BACKEND_URL_CANDIDATES.length > 0;
