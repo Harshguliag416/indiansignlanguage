@@ -377,6 +377,35 @@ export const WEB_MODE_A_HTML = String.raw`<!DOCTYPE html>
     font-weight: 700;
   }
 
+  .demo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .demo-btn {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-alt);
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .demo-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .demo-hint {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
   .notice {
     margin-top: 10px;
     border-radius: 12px;
@@ -458,6 +487,12 @@ export const WEB_MODE_A_HTML = String.raw`<!DOCTYPE html>
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-label" id="demoTitle">Demo Showcase</div>
+      <div class="demo-hint" id="demoHint">Use these quick presets to demo progress with a few letters and assembled words.</div>
+      <div class="demo-grid" id="demoButtons"></div>
+    </div>
+
     <div class="card" id="outputCard">
       <div class="card-label" id="outputLabel">Detected Sign</div>
       <div id="outputArea">
@@ -495,6 +530,15 @@ const SIGN_TO_HINDI = {
   nothing: 'Nothing',
   space: 'Space',
 };
+const DEMO_PRESETS = [
+  { id: 'A', label: 'A', sequence: ['A'], word: 'A' },
+  { id: 'H', label: 'H', sequence: ['H'], word: 'H' },
+  { id: 'W', label: 'W', sequence: ['W'], word: 'W' },
+  { id: 'HI', label: 'HI', sequence: ['H', 'I'], word: 'HI' },
+  { id: 'HELLO', label: 'HELLO', sequence: ['H', 'E', 'L', 'L', 'O'], word: 'HELLO' },
+  { id: 'YES', label: 'YES', sequence: ['Y', 'E', 'S'], word: 'YES' },
+  { id: 'WATER', label: 'WATER', sequence: ['W', 'A', 'T', 'E', 'R'], word: 'WATER' },
+];
 
 const COPY = {
   en: {
@@ -516,6 +560,10 @@ const COPY = {
     backendNotLoaded: 'AI Model: Connected, but model is not loaded',
     mediapipeLoading: 'MediaPipe: Loading libraries',
     mediapipeError: 'MediaPipe libraries could not be loaded',
+    demoTitle: 'Demo Showcase',
+    demoHint: 'Use these quick presets to demo progress with a few letters and assembled words.',
+    demoWord: 'Demo word',
+    demoStatus: 'Demo sequence playing',
   },
   hi: {
     outputLabel: 'Pehchana Gaya Sign',
@@ -536,6 +584,10 @@ const COPY = {
     backendNotLoaded: 'AI Model connected hai, lekin model load nahi hua',
     mediapipeLoading: 'MediaPipe: Libraries load ho rahi hain',
     mediapipeError: 'MediaPipe libraries load nahi ho paayin',
+    demoTitle: 'Demo Showcase',
+    demoHint: 'In quick presets se kuch letters aur assembled words demo mein dikhayein.',
+    demoWord: 'Demo word',
+    demoStatus: 'Demo sequence chal rahi hai',
   },
 };
 
@@ -549,6 +601,8 @@ let activeBackend = BACKEND;
 let activeHandsBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/';
 let frameLoopActive = false;
 let processingFrame = false;
+let demoTimer = null;
+let activeDemoId = null;
 
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
@@ -717,6 +771,79 @@ function startFrameLoop() {
   }
 
   window.requestAnimationFrame(tick);
+}
+
+function renderDemoButtons() {
+  const container = document.getElementById('demoButtons');
+  container.innerHTML = DEMO_PRESETS.map(function(preset) {
+    return '<button class="demo-btn' + (activeDemoId === preset.id ? ' active' : '') + '" onclick="playDemo(\\'' + preset.id + '\\')">' + preset.label + '</button>';
+  }).join('');
+  document.getElementById('demoTitle').textContent = text('demoTitle');
+  document.getElementById('demoHint').textContent = text('demoHint');
+}
+
+function stopDemoPlayback() {
+  if (demoTimer) {
+    clearInterval(demoTimer);
+    demoTimer = null;
+  }
+  activeDemoId = null;
+  renderDemoButtons();
+}
+
+function renderDemoOutput(preset, sign, stepIndex) {
+  const confidence = Math.max(92, 98 - stepIndex);
+  const display = currentLang === 'hi' ? (SIGN_TO_HINDI[sign] || sign) : sign;
+
+  document.getElementById('outputArea').innerHTML = [
+    '<div class="output-sign">' + display + '</div>',
+    currentLang === 'hi' ? '<div class="output-sub">' + sign + '</div>' : '',
+    '<div class="output-sub">' + text('demoWord') + ': ' + preset.word + ' (' + (stepIndex + 1) + '/' + preset.sequence.length + ')</div>',
+    '<div class="output-meta">',
+    '<span class="meta-badge accent">' + text('confidence') + ': ' + confidence + '%</span>',
+    '<span class="meta-badge">Demo Sequence</span>',
+    '</div>',
+    '<button class="btn-speak" onclick="speak(\\'' + preset.word + '\\')">' + text('speak') + '</button>',
+  ].join('');
+
+  document.getElementById('cameraState').style.display = 'flex';
+  document.getElementById('overlaySign').textContent = display;
+  document.getElementById('overlayConf').textContent = confidence + '%';
+  document.getElementById('outputCard').style.borderColor = 'var(--accent)';
+  document.getElementById('cameraStatus').textContent = text('demoStatus') + ': ' + preset.word;
+  addToHistory(sign, confidence, SIGN_TO_HINDI[sign] || sign);
+}
+
+function playDemo(presetId) {
+  const preset = DEMO_PRESETS.find(function(entry) {
+    return entry.id === presetId;
+  });
+
+  if (!preset) {
+    return;
+  }
+
+  stopDemoPlayback();
+  detecting = false;
+  activeDemoId = preset.id;
+  document.getElementById('startBtn').textContent = text('start');
+  document.getElementById('startBtn').classList.remove('active');
+  renderDemoButtons();
+
+  let index = 0;
+  renderDemoOutput(preset, preset.sequence[index], index);
+
+  demoTimer = setInterval(function() {
+    index += 1;
+    if (index >= preset.sequence.length) {
+      clearInterval(demoTimer);
+      demoTimer = null;
+      speak(preset.word);
+      return;
+    }
+
+    renderDemoOutput(preset, preset.sequence[index], index);
+  }, 1100);
 }
 
 async function initMediaPipe() {
@@ -900,6 +1027,7 @@ function speak(textToSpeak) {
 }
 
 function toggleDetection() {
+  stopDemoPlayback();
   detecting = !detecting;
   const startBtn = document.getElementById('startBtn');
   startBtn.textContent = detecting ? text('stop') : text('start');
@@ -907,6 +1035,7 @@ function toggleDetection() {
 }
 
 function clearAll() {
+  stopDemoPlayback();
   detecting = false;
   history = [];
   document.getElementById('startBtn').textContent = text('start');
@@ -922,6 +1051,7 @@ function setLang(lang) {
   document.getElementById('btnEN').classList.toggle('active', lang === 'en');
   document.getElementById('btnHI').classList.toggle('active', lang === 'hi');
   document.getElementById('outputLabel').textContent = text('outputLabel');
+  renderDemoButtons();
   document.getElementById('startBtn').textContent = detecting ? text('stop') : text('start');
   if (history.length === 0) {
     document.getElementById('historyList').innerHTML = '<div class="history-empty">' + text('historyEmpty') + '</div>';
@@ -979,6 +1109,7 @@ async function checkBackend() {
 }
 
 clearAll();
+renderDemoButtons();
 checkBackend();
 initMediaPipe();
 setInterval(checkBackend, 15000);

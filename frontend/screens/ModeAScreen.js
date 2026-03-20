@@ -33,6 +33,10 @@ const LANG = {
     noHand: 'Show your hand clearly',
     preview: 'Preview - position your hand',
     live: 'Live - detecting',
+    demoTitle: 'Demo Showcase',
+    demoHint: 'Use these quick presets to show progress with a few letters and assembled words.',
+    demoPlaying: 'Demo sequence playing...',
+    demoWord: 'Demo word',
   },
   hi: {
     title: 'Deaf -> Hearing',
@@ -54,6 +58,10 @@ const LANG = {
     noHand: 'Haath saaf dikhaiye',
     preview: 'Preview - haath set karein',
     live: 'Live - detection chalu hai',
+    demoTitle: 'Demo Showcase',
+    demoHint: 'In quick presets se kuch letters aur assembled words demo mein dikhayein.',
+    demoPlaying: 'Demo sequence chal rahi hai...',
+    demoWord: 'Demo word',
   },
 };
 
@@ -63,6 +71,16 @@ const SIGN_TO_HINDI = {
   U: 'U', V: 'V', W: 'W', X: 'X', Y: 'Y', Z: 'Z', del: 'Delete', nothing: 'Nothing', space: 'Space',
 };
 
+const DEMO_PRESETS = [
+  { id: 'A', label: 'A', sequence: ['A'], word: 'A' },
+  { id: 'H', label: 'H', sequence: ['H'], word: 'H' },
+  { id: 'W', label: 'W', sequence: ['W'], word: 'W' },
+  { id: 'HI', label: 'HI', sequence: ['H', 'I'], word: 'HI' },
+  { id: 'HELLO', label: 'HELLO', sequence: ['H', 'E', 'L', 'L', 'O'], word: 'HELLO' },
+  { id: 'YES', label: 'YES', sequence: ['Y', 'E', 'S'], word: 'YES' },
+  { id: 'WATER', label: 'WATER', sequence: ['W', 'A', 'T', 'E', 'R'], word: 'WATER' },
+];
+
 export default function ModeAScreen() {
   const { theme, lang, isDark, setIsDark, setLang } = useContext(AppContext);
   const t = LANG[lang];
@@ -70,7 +88,9 @@ export default function ModeAScreen() {
   const [result, setResult] = useState(null);
   const [status, setStatus] = useState('ready');
   const [backendOk, setBackendOk] = useState(false);
+  const [demoPresetId, setDemoPresetId] = useState(null);
   const intervalRef = useRef(null);
+  const demoTimerRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
@@ -114,7 +134,16 @@ export default function ModeAScreen() {
     Speech.stop();
   };
 
+  const stopDemo = () => {
+    if (demoTimerRef.current) {
+      clearInterval(demoTimerRef.current);
+      demoTimerRef.current = null;
+    }
+    setDemoPresetId(null);
+  };
+
   const startSigning = () => {
+    stopDemo();
     if (!HAS_BACKEND_URL) {
       setBackendOk(false);
       setStatus('backendMissing');
@@ -164,14 +193,57 @@ export default function ModeAScreen() {
 
   const clear = () => {
     stop();
+    stopDemo();
+    setStatus('ready');
     setResult(null);
   };
 
-  useEffect(() => () => stop(), []);
+  const runDemo = (preset) => {
+    stop();
+    stopDemo();
+
+    let index = 0;
+    setStatus('demo');
+    setDemoPresetId(preset.id);
+
+    const applyStep = () => {
+      const sign = preset.sequence[index];
+      const confidence = Math.max(92, 98 - index);
+      setResult({
+        sign,
+        confidence,
+        mode: 'demo',
+        hindi: SIGN_TO_HINDI[sign] || sign,
+        demoWord: preset.word,
+        step: index + 1,
+        totalSteps: preset.sequence.length,
+      });
+
+      if (index === preset.sequence.length - 1) {
+        clearInterval(demoTimerRef.current);
+        demoTimerRef.current = null;
+        setTimeout(() => {
+          speakText(preset.word);
+        }, 400);
+        return;
+      }
+
+      index += 1;
+    };
+
+    applyStep();
+    demoTimerRef.current = setInterval(applyStep, 1100);
+  };
+
+  useEffect(() => () => {
+    stop();
+    stopDemo();
+  }, []);
 
   const statusText = (() => {
     if (status === 'backendMissing') return t.backendMissing;
     if (status === 'noHand') return t.noHand;
+    if (status === 'demo') return t.demoPlaying;
     return active ? t.detecting : t.ready;
   })();
 
@@ -263,6 +335,11 @@ export default function ModeAScreen() {
             <>
               <Text style={[styles.outputText, { color: theme.text }]}>{lang === 'hi' ? result.hindi : result.sign}</Text>
               {lang === 'hi' && <Text style={[styles.outputSub, { color: theme.subtext }]}>{result.sign}</Text>}
+              {result.mode === 'demo' && result.demoWord && (
+                <Text style={[styles.outputSub, { color: theme.subtext }]}>
+                  {t.demoWord}: {result.demoWord} ({result.step}/{result.totalSteps})
+                </Text>
+              )}
               <View style={styles.confRow}>
                 <Text style={[styles.confBadge, { color: theme.accentA, borderColor: theme.accentA + '40' }]}>
                   {t.confidence}: {result.confidence}%
@@ -280,6 +357,29 @@ export default function ModeAScreen() {
           ) : (
             <Text style={[styles.placeholder, { color: theme.placeholder }]}>{t.placeholder}</Text>
           )}
+        </View>
+
+        <View style={[styles.demoCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.outputLabel, { color: theme.subtext }]}>{t.demoTitle}</Text>
+          <Text style={[styles.demoHint, { color: theme.subtext }]}>{t.demoHint}</Text>
+          <View style={styles.demoGrid}>
+            {DEMO_PRESETS.map((preset) => (
+              <TouchableOpacity
+                key={preset.id}
+                style={[
+                  styles.demoBtn,
+                  {
+                    borderColor: demoPresetId === preset.id ? theme.accentA : theme.border,
+                    backgroundColor: demoPresetId === preset.id ? theme.accentABg : theme.bg,
+                  },
+                ]}
+                onPress={() => runDemo(preset)}>
+                <Text style={[styles.demoBtnText, { color: demoPresetId === preset.id ? theme.accentA : theme.text }]}>
+                  {preset.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -325,6 +425,11 @@ const styles = StyleSheet.create({
   outputText: { fontSize: 42, fontWeight: 'bold', marginBottom: 6 },
   outputSub: { fontSize: 14, marginBottom: 12 },
   placeholder: { fontSize: 13, fontStyle: 'italic' },
+  demoCard: { borderRadius: 12, padding: 20, borderWidth: 1 },
+  demoHint: { fontSize: 12, lineHeight: 18, marginBottom: 14 },
+  demoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  demoBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, minWidth: 74, alignItems: 'center' },
+  demoBtnText: { fontSize: 12, fontWeight: 'bold' },
   confRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' },
   confBadge: { fontSize: 11, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 4 },
   modeBadgeSmall: { fontSize: 10, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
