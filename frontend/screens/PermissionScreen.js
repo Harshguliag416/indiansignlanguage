@@ -31,7 +31,7 @@ const LANG = {
   },
   hi: {
     title: 'Zaroori Permissions',
-    subtitle: 'Sirf wahi permissions maangi jayengi jo aapke role ke liye chahiye.',
+    subtitle: 'Sirf wahi permissions mangi jayengi jo aapke role ke liye chahiye.',
     cameraTitle: 'Camera',
     cameraDesc: 'Sign-to-speech mode ke liye chahiye.',
     micTitle: 'Microphone',
