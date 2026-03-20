@@ -1,1 +1,813 @@
-﻿export const WEB_MODE_A_HTML = "\u003c!DOCTYPE html\u003e\r\n\u003chtml lang=\"en\"\u003e\r\n\u003chead\u003e\r\n\u003cmeta charset=\"UTF-8\"\u003e\r\n\u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"\u003e\r\n\u003ctitle\u003eISL Bridge â€” Live Detection\u003c/title\u003e\r\n\u003cstyle\u003e\r\n  * { margin: 0; padding: 0; box-sizing: border-box; }\r\n  body {\r\n    background: #07070F;\r\n    color: #E0E0F0;\r\n    font-family: \u0027Courier New\u0027, monospace;\r\n    min-height: 100vh;\r\n  }\r\n\r\n  /* Top bar */\r\n  .topbar {\r\n    background: #0A0A18;\r\n    border-bottom: 1px solid #1A1A3A;\r\n    padding: 14px 20px;\r\n    display: flex;\r\n    align-items: center;\r\n    justify-content: space-between;\r\n  }\r\n  .logo { display: flex; align-items: center; gap: 8px; }\r\n  .logo-icon { font-size: 20px; }\r\n  .logo-name { font-size: 16px; font-weight: bold; color: #fff; }\r\n  .logo-team { font-size: 10px; color: #44446A; margin-top: 2px; }\r\n  .topbar-btns { display: flex; gap: 8px; }\r\n  .btn-small {\r\n    border: 1px solid #1A1A3A;\r\n    background: #0F0F1E;\r\n    color: #E0E0F0;\r\n    padding: 6px 14px;\r\n    border-radius: 6px;\r\n    cursor: pointer;\r\n    font-family: inherit;\r\n    font-size: 12px;\r\n    font-weight: bold;\r\n  }\r\n  .btn-small.accent { border-color: #00F5D4; color: #00F5D4; }\r\n\r\n  /* Main layout */\r\n  .main {\r\n    display: grid;\r\n    grid-template-columns: 1fr 360px;\r\n    gap: 16px;\r\n    padding: 16px;\r\n    max-width: 1100px;\r\n    margin: 0 auto;\r\n    height: calc(100vh - 60px);\r\n  }\r\n\r\n  /* Camera section */\r\n  .camera-section { display: flex; flex-direction: column; gap: 12px; }\r\n  .camera-wrap {\r\n    position: relative;\r\n    background: #0F0F1E;\r\n    border: 1px solid #1A1A3A;\r\n    border-radius: 12px;\r\n    overflow: hidden;\r\n    flex: 1;\r\n  }\r\n  #video {\r\n    width: 100%;\r\n    height: 100%;\r\n    object-fit: cover;\r\n    transform: scaleX(-1);\r\n    display: block;\r\n  }\r\n  #canvas {\r\n    position: absolute;\r\n    top: 0; left: 0;\r\n    width: 100%;\r\n    height: 100%;\r\n    transform: scaleX(-1);\r\n  }\r\n  .camera-overlay-text {\r\n    position: absolute;\r\n    top: 12px; left: 12px;\r\n    background: #00000080;\r\n    padding: 4px 12px;\r\n    border-radius: 20px;\r\n    font-size: 11px;\r\n    font-weight: bold;\r\n    color: #00F5D4;\r\n  }\r\n  .sign-overlay {\r\n    position: absolute;\r\n    bottom: 0; left: 0; right: 0;\r\n    background: linear-gradient(transparent, #00000090);\r\n    padding: 20px;\r\n    display: flex;\r\n    align-items: flex-end;\r\n    justify-content: space-between;\r\n  }\r\n  .sign-big { font-size: 48px; font-weight: bold; color: #fff; }\r\n  .conf-badge {\r\n    background: #00000060;\r\n    border: 1px solid #00F5D4;\r\n    color: #00F5D4;\r\n    padding: 4px 10px;\r\n    border-radius: 4px;\r\n    font-size: 12px;\r\n  }\r\n\r\n  /* Controls */\r\n  .controls { display: flex; gap: 10px; }\r\n  .btn-primary {\r\n    flex: 1;\r\n    background: #00F5D4;\r\n    color: #07070F;\r\n    border: none;\r\n    padding: 14px;\r\n    border-radius: 10px;\r\n    font-size: 14px;\r\n    font-weight: bold;\r\n    font-family: inherit;\r\n    cursor: pointer;\r\n  }\r\n  .btn-primary.active {\r\n    background: #07070F;\r\n    border: 1.5px solid #00F5D4;\r\n    color: #00F5D4;\r\n  }\r\n  .btn-clear {\r\n    background: #0F0F1E;\r\n    color: #44446A;\r\n    border: 1px solid #1A1A3A;\r\n    padding: 14px 20px;\r\n    border-radius: 10px;\r\n    font-size: 13px;\r\n    font-family: inherit;\r\n    cursor: pointer;\r\n  }\r\n\r\n  /* Right panel */\r\n  .panel { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }\r\n\r\n  .card {\r\n    background: #0F0F1E;\r\n    border: 1px solid #1A1A3A;\r\n    border-radius: 12px;\r\n    padding: 16px;\r\n  }\r\n  .card-label {\r\n    font-size: 10px;\r\n    letter-spacing: 0.2em;\r\n    color: #44446A;\r\n    text-transform: uppercase;\r\n    margin-bottom: 12px;\r\n  }\r\n\r\n  /* Status card */\r\n  .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }\r\n  .status-dot { width: 8px; height: 8px; border-radius: 50%; }\r\n  .status-dot.green { background: #00F5D4; box-shadow: 0 0 6px #00F5D4; }\r\n  .status-dot.red   { background: #F72585; }\r\n  .status-dot.yellow{ background: #FFD166; }\r\n  .status-text { font-size: 12px; color: #8888AA; }\r\n\r\n  /* Output card */\r\n  .output-sign {\r\n    font-size: 52px;\r\n    font-weight: bold;\r\n    color: #fff;\r\n    margin-bottom: 4px;\r\n    min-height: 64px;\r\n  }\r\n  .output-hindi { font-size: 20px; color: #00F5D4; margin-bottom: 12px; }\r\n  .output-placeholder { font-size: 13px; color: #2A2A4A; font-style: italic; }\r\n  .output-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }\r\n  .meta-badge {\r\n    font-size: 10px;\r\n    padding: 3px 10px;\r\n    border-radius: 4px;\r\n    border: 1px solid #00F5D440;\r\n    color: #00F5D4;\r\n  }\r\n\r\n  /* Speak button */\r\n  .btn-speak {\r\n    width: 100%;\r\n    background: #001A12;\r\n    border: 1px solid #00F5D440;\r\n    color: #00F5D4;\r\n    padding: 10px;\r\n    border-radius: 8px;\r\n    font-family: inherit;\r\n    font-size: 13px;\r\n    cursor: pointer;\r\n    margin-top: 8px;\r\n  }\r\n\r\n  /* History */\r\n  .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }\r\n  .history-item {\r\n    display: flex;\r\n    justify-content: space-between;\r\n    align-items: center;\r\n    padding: 8px 12px;\r\n    background: #080818;\r\n    border-radius: 6px;\r\n    border: 1px solid #111128;\r\n  }\r\n  .history-sign { font-size: 14px; font-weight: bold; color: #fff; }\r\n  .history-conf { font-size: 11px; color: #44446A; }\r\n  .history-empty { font-size: 12px; color: #2A2A4A; font-style: italic; }\r\n\r\n  /* Mode B tab */\r\n  .mode-tab {\r\n    background: #0F0F1E;\r\n    border: 1px solid #1A1A3A;\r\n    border-radius: 10px;\r\n    padding: 14px;\r\n    text-align: center;\r\n    cursor: pointer;\r\n    font-family: inherit;\r\n    font-size: 13px;\r\n    color: #44446A;\r\n    width: 100%;\r\n  }\r\n\r\n  /* Lang toggle */\r\n  .lang-toggle {\r\n    display: flex;\r\n    background: #080818;\r\n    border: 1px solid #1A1A3A;\r\n    border-radius: 8px;\r\n    overflow: hidden;\r\n  }\r\n  .lang-btn {\r\n    flex: 1;\r\n    padding: 8px;\r\n    border: none;\r\n    background: transparent;\r\n    font-family: inherit;\r\n    font-size: 12px;\r\n    font-weight: bold;\r\n    cursor: pointer;\r\n    color: #44446A;\r\n  }\r\n  .lang-btn.active { background: #00F5D420; color: #00F5D4; }\r\n\r\n  @media (max-width: 700px) {\r\n    .main { grid-template-columns: 1fr; height: auto; }\r\n    .camera-wrap { height: 300px; }\r\n  }\r\n\u003c/style\u003e\r\n\u003c/head\u003e\r\n\u003cbody\u003e\r\n\r\n\u003c!-- Top bar --\u003e\r\n\u003cdiv class=\"topbar\"\u003e\r\n  \u003cdiv class=\"logo\"\u003e\r\n    \u003cspan class=\"logo-icon\"\u003eâš¡\u003c/span\u003e\r\n    \u003cdiv\u003e\r\n      \u003cdiv class=\"logo-name\"\u003eISL Bridge\u003c/div\u003e\r\n      \u003cdiv class=\"logo-team\"\u003eTeam ALPHA Â· KCCITM\u003c/div\u003e\r\n    \u003c/div\u003e\r\n  \u003c/div\u003e\r\n  \u003cdiv class=\"topbar-btns\"\u003e\r\n    \u003cbutton class=\"btn-small\" onclick=\"toggleTheme()\" id=\"themeBtn\"\u003eâ˜€ï¸ Light\u003c/button\u003e\r\n    \u003cbutton class=\"btn-small accent\" onclick=\"toggleMode()\"\u003eâ†” Mode B\u003c/button\u003e\r\n  \u003c/div\u003e\r\n\u003c/div\u003e\r\n\r\n\u003c!-- Main --\u003e\r\n\u003cdiv class=\"main\"\u003e\r\n\r\n  \u003c!-- Camera section --\u003e\r\n  \u003cdiv class=\"camera-section\"\u003e\r\n    \u003cdiv class=\"camera-wrap\"\u003e\r\n      \u003cvideo id=\"video\" autoplay playsinline\u003e\u003c/video\u003e\r\n      \u003ccanvas id=\"canvas\"\u003e\u003c/canvas\u003e\r\n      \u003cdiv class=\"camera-overlay-text\" id=\"cameraStatus\"\u003eâšª Camera loading...\u003c/div\u003e\r\n      \u003cdiv class=\"sign-overlay\" id=\"signOverlay\" style=\"display:none\"\u003e\r\n        \u003cdiv class=\"sign-big\" id=\"overlaySign\"\u003eA\u003c/div\u003e\r\n        \u003cdiv class=\"conf-badge\" id=\"overlayConf\"\u003e95%\u003c/div\u003e\r\n      \u003c/div\u003e\r\n    \u003c/div\u003e\r\n    \u003cdiv class=\"controls\"\u003e\r\n      \u003cbutton class=\"btn-primary\" id=\"startBtn\" onclick=\"toggleDetection()\"\u003e\r\n        Start Signing\r\n      \u003c/button\u003e\r\n      \u003cbutton class=\"btn-clear\" onclick=\"clearAll()\"\u003eClear\u003c/button\u003e\r\n    \u003c/div\u003e\r\n  \u003c/div\u003e\r\n\r\n  \u003c!-- Right panel --\u003e\r\n  \u003cdiv class=\"panel\"\u003e\r\n\r\n    \u003c!-- Status --\u003e\r\n    \u003cdiv class=\"card\"\u003e\r\n      \u003cdiv class=\"card-label\"\u003eSystem Status\u003c/div\u003e\r\n      \u003cdiv class=\"status-row\"\u003e\r\n        \u003cdiv class=\"status-dot\" id=\"camDot\" style=\"background:#FFD166\"\u003e\u003c/div\u003e\r\n        \u003cdiv class=\"status-text\" id=\"camStatus\"\u003eCamera: Loading...\u003c/div\u003e\r\n      \u003c/div\u003e\r\n      \u003cdiv class=\"status-row\"\u003e\r\n        \u003cdiv class=\"status-dot\" id=\"mpDot\" style=\"background:#FFD166\"\u003e\u003c/div\u003e\r\n        \u003cdiv class=\"status-text\" id=\"mpStatus\"\u003eMediaPipe: Loading...\u003c/div\u003e\r\n      \u003c/div\u003e\r\n      \u003cdiv class=\"status-row\"\u003e\r\n        \u003cdiv class=\"status-dot\" id=\"aiDot\" style=\"background:#FFD166\"\u003e\u003c/div\u003e\r\n        \u003cdiv class=\"status-text\" id=\"aiStatus\"\u003eAI Model: Connecting...\u003c/div\u003e\r\n      \u003c/div\u003e\r\n    \u003c/div\u003e\r\n\r\n    \u003c!-- Language --\u003e\r\n    \u003cdiv class=\"card\"\u003e\r\n      \u003cdiv class=\"card-label\"\u003eLanguage\u003c/div\u003e\r\n      \u003cdiv class=\"lang-toggle\"\u003e\r\n        \u003cbutton class=\"lang-btn active\" id=\"btnEN\" onclick=\"setLang(\u0027en\u0027)\"\u003eEnglish\u003c/button\u003e\r\n        \u003cbutton class=\"lang-btn\" id=\"btnHI\" onclick=\"setLang(\u0027hi\u0027)\"\u003eà¤¹à¤¿à¤‚à¤¦à¥€\u003c/button\u003e\r\n      \u003c/div\u003e\r\n    \u003c/div\u003e\r\n\r\n    \u003c!-- Output --\u003e\r\n    \u003cdiv class=\"card\" id=\"outputCard\"\u003e\r\n      \u003cdiv class=\"card-label\" id=\"outputLabel\"\u003eDETECTED SIGN\u003c/div\u003e\r\n      \u003cdiv id=\"outputArea\"\u003e\r\n        \u003cdiv class=\"output-placeholder\"\u003eSign output will appear here...\u003c/div\u003e\r\n      \u003c/div\u003e\r\n    \u003c/div\u003e\r\n\r\n    \u003c!-- History --\u003e\r\n    \u003cdiv class=\"card\"\u003e\r\n      \u003cdiv class=\"card-label\"\u003eRecent Signs\u003c/div\u003e\r\n      \u003cdiv class=\"history-list\" id=\"historyList\"\u003e\r\n        \u003cdiv class=\"history-empty\"\u003eNo signs detected yet\u003c/div\u003e\r\n      \u003c/div\u003e\r\n    \u003c/div\u003e\r\n\r\n    \u003c!-- Switch mode --\u003e\r\n    \u003cbutton class=\"mode-tab\" onclick=\"toggleMode()\"\u003e\r\n      ðŸŽ¤ Switch to Voice Mode (Mode B)\r\n    \u003c/button\u003e\r\n\r\n  \u003c/div\u003e\r\n\u003c/div\u003e\r\n\r\n\u003c!-- MediaPipe --\u003e\r\n\u003cscript src=\"https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js\"\u003e\u003c/script\u003e\r\n\u003cscript src=\"https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js\"\u003e\u003c/script\u003e\r\n\u003cscript src=\"https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js\"\u003e\u003c/script\u003e\r\n\r\n\u003cscript\u003e\r\n// â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nconst BACKEND = \u0027__BACKEND_URL__\u0027;\r\nconst SIGN_TO_HINDI = {\r\n  A:\u0027à¤…\u0027, B:\u0027à¤¬\u0027, C:\u0027à¤•\u0027, D:\u0027à¤¡\u0027, E:\u0027à¤\u0027, F:\u0027à¤«\u0027, G:\u0027à¤—\u0027, H:\u0027à¤¹\u0027,\r\n  I:\u0027à¤‡\u0027, J:\u0027à¤œ\u0027, K:\u0027à¤•\u0027, L:\u0027à¤²\u0027, M:\u0027à¤®\u0027, N:\u0027à¤¨\u0027, O:\u0027à¤“\u0027, P:\u0027à¤ª\u0027,\r\n  Q:\u0027à¤•à¥à¤¯à¥‚\u0027, R:\u0027à¤°\u0027, S:\u0027à¤¸\u0027, T:\u0027à¤¤\u0027, U:\u0027à¤¯à¥‚\u0027, V:\u0027à¤µ\u0027, W:\u0027à¤µ\u0027,\r\n  X:\u0027à¤à¤•à¥à¤¸\u0027, Y:\u0027à¤¯\u0027, Z:\u0027à¤œà¤¼\u0027, del:\u0027à¤®à¤¿à¤Ÿà¤¾à¤à¤‚\u0027, nothing:\u0027à¤•à¥à¤› à¤¨à¤¹à¥€à¤‚\u0027, space:\u0027à¤¸à¥à¤ªà¥‡à¤¸\u0027\r\n};\r\n\r\n// â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nlet detecting    = false;\r\nlet currentLang  = \u0027en\u0027;\r\nlet isDark       = true;\r\nlet lastSend     = 0;\r\nlet history      = [];\r\nlet currentResult = null;\r\nlet hands        = null;\r\nlet camera       = null;\r\n\r\nconst video   = document.getElementById(\u0027video\u0027);\r\nconst canvas  = document.getElementById(\u0027canvas\u0027);\r\nconst ctx     = canvas.getContext(\u00272d\u0027);\r\n\r\n// â”€â”€ Init MediaPipe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nasync function initMediaPipe() {\r\n  try {\r\n    hands = new Hands({\r\n      locateFile: f =\u003e `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`\r\n    });\r\n\r\n    hands.setOptions({\r\n      maxNumHands: 1,\r\n      modelComplexity: 1,\r\n      minDetectionConfidence: 0.7,\r\n      minTrackingConfidence: 0.5,\r\n    });\r\n\r\n    hands.onResults(onResults);\r\n\r\n    // Start webcam\r\n    const stream = await navigator.mediaDevices.getUserMedia({\r\n      video: { facingMode: \u0027user\u0027, width: 640, height: 480 }\r\n    });\r\n    video.srcObject = stream;\r\n\r\n    camera = new Camera(video, {\r\n      onFrame: async () =\u003e {\r\n        canvas.width  = video.videoWidth;\r\n        canvas.height = video.videoHeight;\r\n        await hands.send({ image: video });\r\n      },\r\n      width: 640,\r\n      height: 480,\r\n    });\r\n    camera.start();\r\n\r\n    setStatus(\u0027cam\u0027,  true,  \u0027Camera: Active\u0027);\r\n    setStatus(\u0027mp\u0027,   true,  \u0027MediaPipe: Ready\u0027);\r\n    document.getElementById(\u0027cameraStatus\u0027).textContent = \u0027ðŸŸ¢ Camera active â€” show your hand\u0027;\r\n\r\n  } catch(e) {\r\n    setStatus(\u0027cam\u0027, false, \u0027Camera: \u0027 + e.message);\r\n    document.getElementById(\u0027cameraStatus\u0027).textContent = \u0027âŒ Camera error: \u0027 + e.message;\r\n  }\r\n}\r\n\r\n// â”€â”€ MediaPipe results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nfunction onResults(results) {\r\n  ctx.clearRect(0, 0, canvas.width, canvas.height);\r\n\r\n  if (results.multiHandLandmarks \u0026\u0026 results.multiHandLandmarks.length \u003e 0) {\r\n    const landmarks = results.multiHandLandmarks[0];\r\n\r\n    // Draw landmarks\r\n    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: \u0027#00F5D440\u0027, lineWidth: 2 });\r\n    drawLandmarks(ctx, landmarks, { color: \u0027#00F5D4\u0027, lineWidth: 1, radius: 3 });\r\n\r\n    // Send to backend if detecting\r\n    if (detecting) {\r\n      const now = Date.now();\r\n      if (now - lastSend \u003e 800) {\r\n        lastSend = now;\r\n        const coords = landmarks.flatMap(lm =\u003e [lm.x, lm.y, lm.z]);\r\n        sendToBackend(coords);\r\n      }\r\n    }\r\n\r\n    document.getElementById(\u0027cameraStatus\u0027).textContent = \u0027ðŸŸ¢ Hand detected\u0027;\r\n  } else {\r\n    document.getElementById(\u0027cameraStatus\u0027).textContent =\r\n      detecting ? \u0027âœ‹ Show your hand clearly\u0027 : \u0027âšª Position your hand\u0027;\r\n  }\r\n}\r\n\r\n// â”€â”€ Send landmarks to Flask â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nasync function sendToBackend(landmarks) {\r\n  try {\r\n    const res = await fetch(`${BACKEND}/predict`, {\r\n      method: \u0027POST\u0027,\r\n      headers: { \u0027Content-Type\u0027: \u0027application/json\u0027 },\r\n      body: JSON.stringify({ landmarks }),\r\n    });\r\n    const data = await res.json();\r\n    showResult(data);\r\n  } catch(e) {\r\n    console.log(\u0027Backend error:\u0027, e);\r\n  }\r\n}\r\n\r\n// â”€â”€ Show result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nfunction showResult(data) {\r\n  currentResult = data;\r\n  const sign   = data.sign;\r\n  const conf   = data.confidence;\r\n  const hindi  = SIGN_TO_HINDI[sign] || sign;\r\n  const display = currentLang === \u0027hi\u0027 ? hindi : sign;\r\n\r\n  // Update output card\r\n  document.getElementById(\u0027outputArea\u0027).innerHTML = `\r\n    \u003cdiv class=\"output-sign\"\u003e${display}\u003c/div\u003e\r\n    ${currentLang === \u0027hi\u0027 ? `\u003cdiv class=\"output-hindi\"\u003e${sign}\u003c/div\u003e` : \u0027\u0027}\r\n    \u003cdiv class=\"output-meta\"\u003e\r\n      \u003cspan class=\"meta-badge\"\u003e${currentLang === \u0027hi\u0027 ? \u0027à¤¸à¤Ÿà¥€à¤•à¤¤à¤¾\u0027 : \u0027Confidence\u0027}: ${conf}%\u003c/span\u003e\r\n      \u003cspan class=\"meta-badge\"\u003e${data.mode === \u0027model\u0027 ? \u0027ðŸ§  AI\u0027 : \u0027ðŸŽ­ Demo\u0027}\u003c/span\u003e\r\n    \u003c/div\u003e\r\n    \u003cbutton class=\"btn-speak\" onclick=\"speak(\u0027${display}\u0027)\"\u003e\r\n      ðŸ”Š ${currentLang === \u0027hi\u0027 ? \u0027à¤¦à¥‹à¤¬à¤¾à¤°à¤¾ à¤¬à¥‹à¤²à¥‡à¤‚\u0027 : \u0027Speak Again\u0027}\r\n    \u003c/button\u003e\r\n  `;\r\n\r\n  // Camera overlay\r\n  document.getElementById(\u0027signOverlay\u0027).style.display = \u0027flex\u0027;\r\n  document.getElementById(\u0027overlaySign\u0027).textContent = display;\r\n  document.getElementById(\u0027overlayConf\u0027).textContent = conf + \u0027%\u0027;\r\n\r\n  // Highlight output card\r\n  document.getElementById(\u0027outputCard\u0027).style.borderColor = \u0027#00F5D4\u0027;\r\n\r\n  // Auto speak if high confidence\r\n  if (conf \u003e 75) speak(display);\r\n\r\n  // Add to history\r\n  addToHistory(sign, conf, hindi);\r\n}\r\n\r\n// â”€â”€ History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nfunction addToHistory(sign, conf, hindi) {\r\n  history.unshift({ sign, conf, hindi, time: new Date().toLocaleTimeString() });\r\n  if (history.length \u003e 10) history.pop();\r\n\r\n  const list = document.getElementById(\u0027historyList\u0027);\r\n  list.innerHTML = history.map(h =\u003e `\r\n    \u003cdiv class=\"history-item\"\u003e\r\n      \u003cdiv\u003e\r\n        \u003cspan class=\"history-sign\"\u003e${currentLang === \u0027hi\u0027 ? h.hindi : h.sign}\u003c/span\u003e\r\n        \u003cspan style=\"color:#44446A;font-size:10px;margin-left:8px\"\u003e${h.time}\u003c/span\u003e\r\n      \u003c/div\u003e\r\n      \u003cspan class=\"history-conf\"\u003e${h.conf}%\u003c/span\u003e\r\n    \u003c/div\u003e\r\n  `).join(\u0027\u0027);\r\n}\r\n\r\n// â”€â”€ Speak â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nfunction speak(text) {\r\n  window.speechSynthesis.cancel();\r\n  const u = new SpeechSynthesisUtterance(text);\r\n  u.lang = currentLang === \u0027hi\u0027 ? \u0027hi-IN\u0027 : \u0027en-US\u0027;\r\n  u.rate = 0.9;\r\n  window.speechSynthesis.speak(u);\r\n}\r\n\r\n// â”€â”€ Controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nfunction toggleDetection() {\r\n  detecting = !detecting;\r\n  const btn = document.getElementById(\u0027startBtn\u0027);\r\n  if (detecting) {\r\n    btn.textContent = currentLang === \u0027hi\u0027 ? \u0027à¤°à¥‹à¤•à¥‡à¤‚\u0027 : \u0027Stop Signing\u0027;\r\n    btn.classList.add(\u0027active\u0027);\r\n    document.getElementById(\u0027cameraStatus\u0027).textContent = \u0027ðŸŸ¢ Detecting signs...\u0027;\r\n  } else {\r\n    btn.textContent = currentLang === \u0027hi\u0027 ? \u0027à¤¸à¤¾à¤‡à¤¨ à¤•à¤°à¥‡à¤‚\u0027 : \u0027Start Signing\u0027;\r\n    btn.classList.remove(\u0027active\u0027);\r\n    document.getElementById(\u0027cameraStatus\u0027).textContent = \u0027âšª Detection paused\u0027;\r\n  }\r\n}\r\n\r\nfunction clearAll() {\r\n  detecting = false;\r\n  currentResult = null;\r\n  history = [];\r\n  document.getElementById(\u0027startBtn\u0027).textContent = currentLang === \u0027hi\u0027 ? \u0027à¤¸à¤¾à¤‡à¤¨ à¤•à¤°à¥‡à¤‚\u0027 : \u0027Start Signing\u0027;\r\n  document.getElementById(\u0027startBtn\u0027).classList.remove(\u0027active\u0027);\r\n  document.getElementById(\u0027outputArea\u0027).innerHTML = `\u003cdiv class=\"output-placeholder\"\u003e${currentLang === \u0027hi\u0027 ? \u0027à¤¸à¤¾à¤‡à¤¨ à¤•à¤¾ à¤…à¤¨à¥à¤µà¤¾à¤¦ à¤¯à¤¹à¤¾à¤ à¤¦à¤¿à¤–à¥‡à¤—à¤¾...\u0027 : \u0027Sign output will appear here...\u0027}\u003c/div\u003e`;\r\n  document.getElementById(\u0027signOverlay\u0027).style.display = \u0027none\u0027;\r\n  document.getElementById(\u0027outputCard\u0027).style.borderColor = \u0027#1A1A3A\u0027;\r\n  document.getElementById(\u0027historyList\u0027).innerHTML = `\u003cdiv class=\"history-empty\"\u003e${currentLang === \u0027hi\u0027 ? \u0027à¤…à¤­à¥€ à¤•à¥‹à¤ˆ à¤¸à¤‚à¤•à¥‡à¤¤ à¤¨à¤¹à¥€à¤‚\u0027 : \u0027No signs detected yet\u0027}\u003c/div\u003e`;\r\n}\r\n\r\nfunction setLang(lang) {\r\n  currentLang = lang;\r\n  document.getElementById(\u0027btnEN\u0027).classList.toggle(\u0027active\u0027, lang === \u0027en\u0027);\r\n  document.getElementById(\u0027btnHI\u0027).classList.toggle(\u0027active\u0027, lang === \u0027hi\u0027);\r\n  document.getElementById(\u0027outputLabel\u0027).textContent = lang === \u0027hi\u0027 ? \u0027à¤ªà¤¹à¤šà¤¾à¤¨à¤¾ à¤—à¤¯à¤¾ à¤¸à¤‚à¤•à¥‡à¤¤\u0027 : \u0027DETECTED SIGN\u0027;\r\n  document.getElementById(\u0027startBtn\u0027).textContent = lang === \u0027hi\u0027 ? \u0027à¤¸à¤¾à¤‡à¤¨ à¤•à¤°à¥‡à¤‚\u0027 : \u0027Start Signing\u0027;\r\n}\r\n\r\nfunction toggleMode() {\r\n  alert(\u0027Mode B (Voice â†’ Text) is available in the React Native app. Open Expo app on your phone!\u0027);\r\n}\r\n\r\nfunction toggleTheme() {\r\n  isDark = !isDark;\r\n  document.body.style.background    = isDark ? \u0027#07070F\u0027 : \u0027#F0F4F8\u0027;\r\n  document.body.style.color         = isDark ? \u0027#E0E0F0\u0027 : \u0027#0A0A1A\u0027;\r\n  document.getElementById(\u0027themeBtn\u0027).textContent = isDark ? \u0027â˜€ï¸ Light\u0027 : \u0027ðŸŒ™ Dark\u0027;\r\n}\r\n\r\n// â”€â”€ Status helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nfunction setStatus(id, ok, text) {\r\n  document.getElementById(id + \u0027Dot\u0027).style.background = ok ? \u0027#00F5D4\u0027 : \u0027#F72585\u0027;\r\n  document.getElementById(id + \u0027Status\u0027).textContent   = text;\r\n  if (ok \u0026\u0026 id === \u0027cam\u0027) document.getElementById(id + \u0027Dot\u0027).style.boxShadow = \u00270 0 6px #00F5D4\u0027;\r\n}\r\n\r\n// â”€â”€ Check backend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\nasync function checkBackend() {\r\n  try {\r\n    const res  = await fetch(`${BACKEND}/health`);\r\n    const data = await res.json();\r\n    const ok   = data.model === \u0027loaded\u0027;\r\n    setStatus(\u0027ai\u0027, ok, ok\r\n      ? `AI Model: Ready (${data.signs_count} signs)`\r\n      : \u0027AI Model: Not loaded\u0027\r\n    );\r\n  } catch {\r\n    setStatus(\u0027ai\u0027, false, \u0027AI Model: Backend offline\u0027);\r\n  }\r\n}\r\n\r\n// â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\r\ncheckBackend();\r\ninitMediaPipe();\r\nsetInterval(checkBackend, 10000);\r\n\u003c/script\u003e\r\n\u003c/body\u003e\r\n\u003c/html\u003e";
+export const WEB_MODE_A_HTML = String.raw`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISL Bridge - Live Detection</title>
+<style>
+  :root {
+    --bg: #07070f;
+    --surface: #0f0f1e;
+    --surface-alt: #080818;
+    --border: #1a1a3a;
+    --text: #f5f7ff;
+    --muted: #7b7fa8;
+    --accent: #00f5d4;
+    --accent-bg: rgba(0, 245, 212, 0.14);
+    --danger: #f72585;
+    --warning: #ffd166;
+  }
+
+  body.light {
+    --bg: #f3f6fb;
+    --surface: #ffffff;
+    --surface-alt: #eef3fb;
+    --border: #d7e0ef;
+    --text: #111827;
+    --muted: #5f6b85;
+    --accent: #0a8f7d;
+    --accent-bg: rgba(10, 143, 125, 0.12);
+    --danger: #cc3366;
+    --warning: #c98b00;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--accent-bg);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .logo-copy strong {
+    display: block;
+    font-size: 15px;
+  }
+
+  .logo-copy span {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .topbar-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .btn-small,
+  .btn-clear,
+  .mode-tab {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .btn-small {
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .btn-small.accent {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 16px;
+    padding: 16px;
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+
+  .camera-section,
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .camera-wrap,
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+
+  .camera-wrap {
+    position: relative;
+    overflow: hidden;
+    min-height: 420px;
+  }
+
+  #video,
+  #canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+
+  #canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  .camera-overlay-text {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: inline-flex;
+    width: fit-content;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .camera-state {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.55));
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sign-big {
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .conf-badge {
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: rgba(0, 0, 0, 0.35);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #051110;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .btn-primary.active {
+    background: var(--surface);
+    color: var(--accent);
+  }
+
+  .btn-clear {
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .status-row:last-child { margin-bottom: 0; }
+
+  .status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--warning);
+  }
+
+  .status-text {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .lang-toggle {
+    display: flex;
+    gap: 8px;
+  }
+
+  .lang-btn {
+    flex: 1;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-alt);
+    color: var(--muted);
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .lang-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .output-sign {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.05;
+  }
+
+  .output-sub {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .output-placeholder,
+  .history-empty {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .output-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .meta-badge {
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .meta-badge.accent {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  .btn-speak {
+    width: 100%;
+    margin-top: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  .history-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-sign {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .history-time,
+  .history-conf {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .mode-tab {
+    width: 100%;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .notice {
+    margin-top: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-alt);
+    color: var(--muted);
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 880px) {
+    .main {
+      grid-template-columns: 1fr;
+    }
+
+    .camera-wrap {
+      min-height: 320px;
+    }
+  }
+</style>
+</head>
+<body class="dark">
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">AI</div>
+    <div class="logo-copy">
+      <strong>ISL Bridge</strong>
+      <span>Live sign recognition</span>
+    </div>
+  </div>
+  <div class="topbar-btns">
+    <button class="btn-small" onclick="toggleTheme()" id="themeBtn">Light Theme</button>
+    <button class="btn-small accent" onclick="toggleMode()">Switch to Speech Mode</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="camera-section">
+    <div class="camera-wrap">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas"></canvas>
+      <div class="camera-overlay-text" id="cameraStatus">Camera loading...</div>
+      <div class="camera-state" id="cameraState" style="display:none">
+        <div class="sign-big" id="overlaySign">A</div>
+        <div class="conf-badge" id="overlayConf">95%</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-primary" id="startBtn" onclick="toggleDetection()">Start Signing</button>
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <div class="card-label">System Status</div>
+      <div class="status-row">
+        <div class="status-dot" id="camDot"></div>
+        <div class="status-text" id="camStatus">Camera: Waiting</div>
+      </div>
+      <div class="status-row">
+        <div class="status-dot" id="mpDot"></div>
+        <div class="status-text" id="mpStatus">MediaPipe: Waiting</div>
+      </div>
+      <div class="status-row">
+        <div class="status-dot" id="aiDot"></div>
+        <div class="status-text" id="aiStatus">AI Model: Connecting</div>
+      </div>
+      <div class="notice" id="backendNotice" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Language</div>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btnEN" onclick="setLang('en')">English</button>
+        <button class="lang-btn" id="btnHI" onclick="setLang('hi')">Hindi</button>
+      </div>
+    </div>
+
+    <div class="card" id="outputCard">
+      <div class="card-label" id="outputLabel">Detected Sign</div>
+      <div id="outputArea">
+        <div class="output-placeholder">Live sign output will appear here after the AI model responds.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Recent Signs</div>
+      <div class="history-list" id="historyList">
+        <div class="history-empty">No signs detected yet.</div>
+      </div>
+    </div>
+
+    <button class="mode-tab" onclick="toggleMode()">Open Speech to Text</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<script>
+const BACKEND = '__BACKEND_URL__'.trim();
+const SIGN_TO_HINDI = {
+  del: 'Delete',
+  nothing: 'Nothing',
+  space: 'Space',
+};
+
+const COPY = {
+  en: {
+    outputLabel: 'Detected Sign',
+    start: 'Start Signing',
+    stop: 'Stop Signing',
+    placeholder: 'Live sign output will appear here after the AI model responds.',
+    confidence: 'Confidence',
+    speak: 'Speak Again',
+    historyEmpty: 'No signs detected yet.',
+    cameraReady: 'Camera active - show your hand',
+    cameraMissing: 'Show your hand clearly',
+    cameraIdle: 'Position your hand in the frame',
+    backendMissing: 'Backend URL missing. Set EXPO_PUBLIC_BACKEND_URL in Vercel or use the production fallback.',
+    backendOffline: 'Backend unavailable. Render may be sleeping or the URL may be incorrect.',
+    backendReady: (count) => 'AI Model: Ready (' + count + ' signs)',
+    backendNotLoaded: 'AI Model: Connected, but model is not loaded',
+  },
+  hi: {
+    outputLabel: 'Pehchana Gaya Sign',
+    start: 'Sign Shuru Karein',
+    stop: 'Sign Rokein',
+    placeholder: 'AI response aane ke baad sign yahan dikhai dega.',
+    confidence: 'Confidence',
+    speak: 'Dobara Bolen',
+    historyEmpty: 'Abhi koi sign detect nahi hua.',
+    cameraReady: 'Camera active - haath dikhaiye',
+    cameraMissing: 'Haath saaf dikhaiye',
+    cameraIdle: 'Haath ko frame mein rakhiye',
+    backendMissing: 'Backend URL missing hai. Vercel mein EXPO_PUBLIC_BACKEND_URL set karein.',
+    backendOffline: 'Backend unavailable hai. Render sleep mode mein ho sakta hai ya URL galat ho sakta hai.',
+    backendReady: (count) => 'AI Model: Ready (' + count + ' signs)',
+    backendNotLoaded: 'AI Model connected hai, lekin model load nahi hua',
+  },
+};
+
+let detecting = false;
+let currentLang = 'en';
+let isDark = true;
+let lastSend = 0;
+let history = [];
+let hands = null;
+let camera = null;
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function text(key, arg) {
+  const value = COPY[currentLang][key];
+  return typeof value === 'function' ? value(arg) : value;
+}
+
+function setNotice(message) {
+  const notice = document.getElementById('backendNotice');
+  notice.style.display = message ? 'block' : 'none';
+  notice.textContent = message || '';
+}
+
+function setStatus(id, state, message) {
+  const dot = document.getElementById(id + 'Dot');
+  const label = document.getElementById(id + 'Status');
+  const colors = {
+    ok: 'var(--accent)',
+    warn: 'var(--warning)',
+    error: 'var(--danger)',
+  };
+  dot.style.background = colors[state] || colors.warn;
+  label.textContent = message;
+}
+
+async function initMediaPipe() {
+  try {
+    hands = new Hands({
+      locateFile: function(file) {
+        return 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/' + file;
+      },
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.5,
+    });
+
+    hands.onResults(onResults);
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: 640, height: 480 },
+    });
+    video.srcObject = stream;
+
+    camera = new Camera(video, {
+      onFrame: async function() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        await hands.send({ image: video });
+      },
+      width: 640,
+      height: 480,
+    });
+
+    camera.start();
+    setStatus('cam', 'ok', 'Camera: Active');
+    setStatus('mp', 'ok', 'MediaPipe: Ready');
+    document.getElementById('cameraStatus').textContent = text('cameraReady');
+  } catch (error) {
+    setStatus('cam', 'error', 'Camera: ' + error.message);
+    document.getElementById('cameraStatus').textContent = 'Camera error: ' + error.message;
+  }
+}
+
+function onResults(results) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    const landmarks = results.multiHandLandmarks[0];
+    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00f5d488', lineWidth: 2 });
+    drawLandmarks(ctx, landmarks, { color: '#00f5d4', lineWidth: 1, radius: 3 });
+
+    if (detecting) {
+      const now = Date.now();
+      if (now - lastSend > 800) {
+        lastSend = now;
+        const coords = landmarks.flatMap(function(point) {
+          return [point.x, point.y, point.z];
+        });
+        sendToBackend(coords);
+      }
+    }
+
+    document.getElementById('cameraStatus').textContent = text('cameraReady');
+  } else {
+    document.getElementById('cameraStatus').textContent = detecting ? text('cameraMissing') : text('cameraIdle');
+  }
+}
+
+async function sendToBackend(landmarks) {
+  if (!BACKEND) {
+    setNotice(text('backendMissing'));
+    setStatus('ai', 'error', 'AI Model: URL missing');
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(function() {
+    controller.abort();
+  }, 8000);
+
+  try {
+    const response = await fetch(BACKEND + '/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ landmarks: landmarks }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error('Prediction failed with status ' + response.status);
+    }
+
+    const data = await response.json();
+    if (!data.sign) {
+      throw new Error(data.error || 'Prediction response is missing a sign.');
+    }
+
+    showResult(data);
+  } catch (error) {
+    setNotice(text('backendOffline'));
+    setStatus('ai', 'error', 'AI Model: Backend unavailable');
+    console.error('Backend error:', error);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function showResult(data) {
+  const sign = data.sign;
+  const confidence = data.confidence;
+  const hindi = SIGN_TO_HINDI[sign] || sign;
+  const display = currentLang === 'hi' ? hindi : sign;
+
+  document.getElementById('outputArea').innerHTML = [
+    '<div class="output-sign">' + display + '</div>',
+    currentLang === 'hi' ? '<div class="output-sub">' + sign + '</div>' : '',
+    '<div class="output-meta">',
+    '<span class="meta-badge accent">' + text('confidence') + ': ' + confidence + '%</span>',
+    '<span class="meta-badge">' + (data.mode === 'model' ? 'AI Model' : 'Mock Response') + '</span>',
+    '</div>',
+    '<button class="btn-speak" onclick="speak(\\'' + String(display).replace(/'/g, "\\\\'") + '\\')">' + text('speak') + '</button>',
+  ].join('');
+
+  document.getElementById('cameraState').style.display = 'flex';
+  document.getElementById('overlaySign').textContent = display;
+  document.getElementById('overlayConf').textContent = confidence + '%';
+  document.getElementById('outputCard').style.borderColor = 'var(--accent)';
+
+  if (confidence > 75) {
+    speak(display);
+  }
+
+  addToHistory(sign, confidence, hindi);
+}
+
+function addToHistory(sign, confidence, hindi) {
+  history.unshift({
+    display: currentLang === 'hi' ? hindi : sign,
+    confidence: confidence,
+    time: new Date().toLocaleTimeString(),
+  });
+  if (history.length > 10) {
+    history.pop();
+  }
+
+  const list = document.getElementById('historyList');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="history-empty">' + text('historyEmpty') + '</div>';
+    return;
+  }
+
+  list.innerHTML = history.map(function(entry) {
+    return [
+      '<div class="history-item">',
+      '<div class="history-main">',
+      '<span class="history-sign">' + entry.display + '</span>',
+      '<span class="history-time">' + entry.time + '</span>',
+      '</div>',
+      '<span class="history-conf">' + entry.confidence + '%</span>',
+      '</div>',
+    ].join('');
+  }).join('');
+}
+
+function speak(textToSpeak) {
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+  utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+}
+
+function toggleDetection() {
+  detecting = !detecting;
+  const startBtn = document.getElementById('startBtn');
+  startBtn.textContent = detecting ? text('stop') : text('start');
+  startBtn.classList.toggle('active', detecting);
+}
+
+function clearAll() {
+  detecting = false;
+  history = [];
+  document.getElementById('startBtn').textContent = text('start');
+  document.getElementById('startBtn').classList.remove('active');
+  document.getElementById('cameraState').style.display = 'none';
+  document.getElementById('outputCard').style.borderColor = 'var(--border)';
+  document.getElementById('outputArea').innerHTML = '<div class="output-placeholder">' + text('placeholder') + '</div>';
+  document.getElementById('historyList').innerHTML = '<div class="history-empty">' + text('historyEmpty') + '</div>';
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+  document.getElementById('btnHI').classList.toggle('active', lang === 'hi');
+  document.getElementById('outputLabel').textContent = text('outputLabel');
+  document.getElementById('startBtn').textContent = detecting ? text('stop') : text('start');
+  if (history.length === 0) {
+    document.getElementById('historyList').innerHTML = '<div class="history-empty">' + text('historyEmpty') + '</div>';
+  }
+}
+
+function toggleMode() {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'isl-bridge-switch-mode', mode: 'ModeB' }, '*');
+    return;
+  }
+  alert('Use the Speech to Text tab above.');
+}
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  document.body.classList.toggle('dark', isDark);
+  document.getElementById('themeBtn').textContent = isDark ? 'Light Theme' : 'Dark Theme';
+}
+
+async function checkBackend() {
+  if (!BACKEND) {
+    setNotice(text('backendMissing'));
+    setStatus('ai', 'error', 'AI Model: URL missing');
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(function() {
+    controller.abort();
+  }, 10000);
+
+  try {
+    const response = await fetch(BACKEND + '/health', { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error('Health check failed with status ' + response.status);
+    }
+
+    const data = await response.json();
+    const ready = data.model === 'loaded';
+    setNotice('');
+    setStatus('ai', ready ? 'ok' : 'warn', ready ? text('backendReady', data.signs_count) : text('backendNotLoaded'));
+  } catch (error) {
+    setNotice(text('backendOffline'));
+    setStatus('ai', 'error', 'AI Model: Backend unavailable');
+    console.error('Health check error:', error);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+clearAll();
+checkBackend();
+initMediaPipe();
+setInterval(checkBackend, 15000);
+</script>
+</body>
+</html>`;

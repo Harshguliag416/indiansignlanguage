@@ -1,7 +1,8 @@
-﻿from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 import os
+import threading
 
 import numpy as np
 
@@ -14,6 +15,9 @@ LABELMAP_PATH = os.path.join(BASE_DIR, 'model', 'label_map.json')
 
 model = None
 label_map = None
+model_loading = False
+model_load_error = None
+model_lock = threading.Lock()
 
 
 def build_model(num_classes):
@@ -34,37 +38,62 @@ def build_model(num_classes):
 
 
 def load_model():
-    global model, label_map
+    global model, label_map, model_loading, model_load_error
 
-    try:
-        with open(LABELMAP_PATH, 'r', encoding='utf-8') as file:
-            label_map = json.load(file)
+    with model_lock:
+        if model is not None:
+            return True
 
-        num_classes = len(label_map)
-        model = build_model(num_classes)
-        weights_data = np.load(WEIGHTS_PATH, allow_pickle=True)
-        weights = [weights_data[f'arr_{index}'] for index in range(len(weights_data.files))]
-        model.set_weights(weights)
+        model_loading = True
+        model_load_error = None
 
-        print('Model loaded successfully')
-        print(f'Signs: {list(label_map.values())}')
-    except Exception as error:
-        model = None
-        label_map = None
-        print(f'Model not loaded: {error}')
-        print('Running in mock mode')
+        try:
+            with open(LABELMAP_PATH, 'r', encoding='utf-8') as file:
+                next_label_map = json.load(file)
+
+            num_classes = len(next_label_map)
+            next_model = build_model(num_classes)
+            weights_data = np.load(WEIGHTS_PATH, allow_pickle=True)
+            weights = [weights_data[f'arr_{index}'] for index in range(len(weights_data.files))]
+            next_model.set_weights(weights)
+
+            model = next_model
+            label_map = next_label_map
+
+            print('Model loaded successfully')
+            print(f'Signs: {list(label_map.values())}')
+            return True
+        except Exception as error:
+            model = None
+            label_map = None
+            model_load_error = str(error)
+            print(f'Model not loaded: {error}')
+            return False
+        finally:
+            model_loading = False
 
 
-load_model()
+def ensure_model_loading():
+    if model is not None or model_loading:
+        return
+
+    def runner():
+        load_model()
+
+    threading.Thread(target=runner, daemon=True).start()
+
+
+ensure_model_loading()
 
 
 @app.route('/', methods=['GET'])
 def home():
+    ensure_model_loading()
     return jsonify({
         'status': 'running',
         'team': 'Team ALPHA',
         'project': 'ISL Bridge',
-        'model': 'loaded' if model else 'not loaded yet',
+        'model': 'loaded' if model else 'loading' if model_loading else 'error' if model_load_error else 'not loaded',
     })
 
 
@@ -75,32 +104,27 @@ def predict():
         if not data or 'landmarks' not in data:
             return jsonify({'error': 'No landmarks provided'}), 400
 
-        landmarks = np.array(data['landmarks'])
+        landmarks = np.asarray(data['landmarks'], dtype=np.float32)
+        if landmarks.size != 63:
+            return jsonify({'error': 'Expected 63 landmark values'}), 400
 
-        if model is not None and label_map:
-            landmarks = landmarks.reshape(1, -1)
-            prediction = model.predict(landmarks, verbose=0)
-            class_idx = int(np.argmax(prediction))
-            confidence = float(np.max(prediction)) * 100
-            sign = label_map.get(str(class_idx), 'Unknown')
-            return jsonify({
-                'sign': sign,
-                'confidence': round(confidence, 2),
-                'mode': 'model',
-            })
+        if model is None:
+            loaded = load_model()
+            if not loaded:
+                return jsonify({
+                    'error': 'Model is unavailable',
+                    'details': model_load_error or 'Model is still loading',
+                }), 503
 
-        import random
-
-        mock_signs = [
-            'I need help', 'Call doctor', 'I am in pain',
-            'Thank you', 'I am deaf', 'Call police',
-            'Water please', 'Emergency', 'I am lost',
-            'I am hungry',
-        ]
+        landmarks = landmarks.reshape(1, -1)
+        prediction = model.predict(landmarks, verbose=0)
+        class_idx = int(np.argmax(prediction))
+        confidence = float(np.max(prediction)) * 100
+        sign = label_map.get(str(class_idx), 'Unknown')
         return jsonify({
-            'sign': random.choice(mock_signs),
-            'confidence': round(random.uniform(85, 98), 2),
-            'mode': 'mock',
+            'sign': sign,
+            'confidence': round(confidence, 2),
+            'mode': 'model',
         })
     except Exception as error:
         return jsonify({'error': str(error)}), 500
@@ -108,10 +132,12 @@ def predict():
 
 @app.route('/health', methods=['GET'])
 def health():
+    ensure_model_loading()
     return jsonify({
         'status': 'healthy',
-        'model': 'loaded' if model else 'not loaded',
+        'model': 'loaded' if model else 'loading' if model_loading else 'error' if model_load_error else 'not loaded',
         'signs_count': len(label_map) if label_map else 0,
+        'error': model_load_error,
     })
 
 
@@ -120,7 +146,11 @@ def get_signs():
     if label_map:
         return jsonify({'signs': list(label_map.values())})
 
-    return jsonify({'signs': [], 'note': 'Model not loaded yet'})
+    return jsonify({
+        'signs': [],
+        'note': 'Model not loaded yet',
+        'error': model_load_error,
+    })
 
 
 if __name__ == '__main__':

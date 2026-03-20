@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../AppContext';
 import ModeAScreen from './ModeAScreen';
 import ModeAWebScreen from './ModeAWebScreen';
@@ -17,6 +17,22 @@ function WebModeSwitcher({ initialTab }) {
   const { theme } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(initialTab);
   const ActiveComponent = activeTab === 'ModeB' ? ModeBScreen : ModeAWebScreen;
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      const nextMode = event?.data?.mode;
+      if (event?.data?.type === 'isl-bridge-switch-mode' && (nextMode === 'ModeA' || nextMode === 'ModeB')) {
+        setActiveTab(nextMode);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleMessage);
+      return () => window.removeEventListener('message', handleMessage);
+    }
+
+    return undefined;
+  }, []);
 
   return (
     <View style={[styles.webRoot, { backgroundColor: theme.bg }]}>

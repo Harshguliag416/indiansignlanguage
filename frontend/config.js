@@ -1,4 +1,5 @@
-﻿const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
+const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
+const PRODUCTION_FALLBACK_BACKEND_URL = 'https://isl-bridge-backend.onrender.com';
 
 const resolveBackendUrl = () => {
   const explicitUrl = process.env.EXPO_PUBLIC_BACKEND_URL?.trim();
@@ -11,9 +12,11 @@ const resolveBackendUrl = () => {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://127.0.0.1:5000';
     }
+
+    return PRODUCTION_FALLBACK_BACKEND_URL;
   }
 
-  return '';
+  return PRODUCTION_FALLBACK_BACKEND_URL;
 };
 
 export const BACKEND_URL = resolveBackendUrl();
