@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { BACKEND_URL, BACKEND_URL_CANDIDATES, HAS_BACKEND_URL } from '../config';
 import { WEB_FONT_FAMILY } from '../design';
-import { WEB_MODE_A_HTML } from '../webModeAHtml';
 
 const frameStyle = {
   display: 'block',
@@ -15,25 +14,19 @@ const frameStyle = {
 
 export default function ModeAWebScreen() {
   const isWeb = Platform.OS === 'web';
-  const [frameUrl, setFrameUrl] = useState(null);
 
-  const frameHtml = WEB_MODE_A_HTML
-    .replace('__BACKEND_URL__', BACKEND_URL || '')
-    .replace('__BACKEND_URL_CANDIDATES__', JSON.stringify(BACKEND_URL_CANDIDATES));
-
-  useEffect(() => {
+  const frameUrl = useMemo(() => {
     if (!isWeb) {
-      return undefined;
+      return null;
     }
 
-    const blob = new Blob([frameHtml], { type: 'text/html' });
-    const nextUrl = URL.createObjectURL(blob);
-    setFrameUrl(nextUrl);
-
-    return () => {
-      URL.revokeObjectURL(nextUrl);
-    };
-  }, [frameHtml, isWeb]);
+    const params = new URLSearchParams();
+    if (BACKEND_URL) {
+      params.set('backend', BACKEND_URL);
+    }
+    params.set('candidates', JSON.stringify(BACKEND_URL_CANDIDATES || []));
+    return `/mode-a-web.html?${params.toString()}`;
+  }, [isWeb]);
 
   if (!isWeb) {
     return null;
@@ -55,7 +48,7 @@ export default function ModeAWebScreen() {
           title="ISL Bridge Mode A"
           src={frameUrl || undefined}
           style={frameStyle}
-          allow="camera *; microphone *; autoplay *"
+          allow="camera; microphone; autoplay"
         />
       </View>
     </View>

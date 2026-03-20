@@ -532,8 +532,21 @@ export const WEB_MODE_A_HTML = String.raw`<!DOCTYPE html>
 </div>
 
 <script>
-const BACKEND = '__BACKEND_URL__'.trim();
-const BACKEND_CANDIDATES = __BACKEND_URL_CANDIDATES__;
+const urlParams = new URLSearchParams(window.location.search);
+const BACKEND = (urlParams.get('backend') || '__BACKEND_URL__').trim();
+const BACKEND_CANDIDATES = (() => {
+  const raw = urlParams.get('candidates');
+  if (!raw) {
+    return __BACKEND_URL_CANDIDATES__;
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : __BACKEND_URL_CANDIDATES__;
+  } catch {
+    return __BACKEND_URL_CANDIDATES__;
+  }
+})();
 const MEDIA_PIPE_TIMEOUT_MS = 12000;
 const MEDIA_PIPE_SOURCES = {
   hands: [
