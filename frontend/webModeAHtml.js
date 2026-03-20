@@ -813,7 +813,7 @@ function startFrameLoop() {
 function renderDemoButtons() {
   const container = document.getElementById('demoButtons');
   container.innerHTML = DEMO_PRESETS.map(function(preset) {
-    return '<button class="demo-btn' + (activeDemoId === preset.id ? ' active' : '') + '" onclick="playDemo(\\'' + preset.id + '\\')">' + preset.label + '</button>';
+    return '<button class="demo-btn' + (activeDemoId === preset.id ? ' active' : '') + '" onclick=\'playDemo(' + JSON.stringify(preset.id) + ')\'>' + preset.label + '</button>';
   }).join('');
   document.getElementById('demoTitle').textContent = text('demoTitle');
   document.getElementById('demoHint').textContent = text('demoHint');
@@ -831,6 +831,7 @@ function stopDemoPlayback() {
 function renderDemoOutput(preset, sign, stepIndex) {
   const confidence = Math.max(92, 98 - stepIndex);
   const display = currentLang === 'hi' ? (SIGN_TO_HINDI[sign] || sign) : sign;
+  const speakValue = JSON.stringify(String(preset.word));
 
   document.getElementById('outputArea').innerHTML = [
     '<div class="output-sign">' + display + '</div>',
@@ -840,7 +841,7 @@ function renderDemoOutput(preset, sign, stepIndex) {
     '<span class="meta-badge accent">' + text('confidence') + ': ' + confidence + '%</span>',
     '<span class="meta-badge">Demo Sequence</span>',
     '</div>',
-    '<button class="btn-speak" onclick="speak(\\'' + preset.word + '\\')">' + text('speak') + '</button>',
+    '<button class="btn-speak" onclick=\'speak(' + speakValue + ')\'>' + text('speak') + '</button>',
   ].join('');
 
   document.getElementById('cameraState').style.display = 'flex';
@@ -1003,6 +1004,7 @@ function showResult(data) {
   const confidence = data.confidence;
   const hindi = SIGN_TO_HINDI[sign] || sign;
   const display = currentLang === 'hi' ? hindi : sign;
+  const speakValue = JSON.stringify(String(display));
 
   document.getElementById('outputArea').innerHTML = [
     '<div class="output-sign">' + display + '</div>',
@@ -1011,7 +1013,7 @@ function showResult(data) {
     '<span class="meta-badge accent">' + text('confidence') + ': ' + confidence + '%</span>',
     '<span class="meta-badge">' + (data.mode === 'model' ? 'AI Model' : 'Mock Response') + '</span>',
     '</div>',
-    '<button class="btn-speak" onclick="speak(\\'' + String(display).replace(/'/g, "\\\\'") + '\\')">' + text('speak') + '</button>',
+    '<button class="btn-speak" onclick=\'speak(' + speakValue + ')\'>' + text('speak') + '</button>',
   ].join('');
 
   document.getElementById('cameraState').style.display = 'flex';
