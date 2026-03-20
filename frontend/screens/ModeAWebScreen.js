@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { BACKEND_URL, BACKEND_URL_CANDIDATES, HAS_BACKEND_URL } from '../config';
 import { WEB_FONT_FAMILY } from '../design';
@@ -13,13 +14,30 @@ const frameStyle = {
 };
 
 export default function ModeAWebScreen() {
-  if (Platform.OS !== 'web') {
-    return null;
-  }
+  const isWeb = Platform.OS === 'web';
+  const [frameUrl, setFrameUrl] = useState(null);
 
   const frameHtml = WEB_MODE_A_HTML
     .replace('__BACKEND_URL__', BACKEND_URL || '')
     .replace('__BACKEND_URL_CANDIDATES__', JSON.stringify(BACKEND_URL_CANDIDATES));
+
+  useEffect(() => {
+    if (!isWeb) {
+      return undefined;
+    }
+
+    const blob = new Blob([frameHtml], { type: 'text/html' });
+    const nextUrl = URL.createObjectURL(blob);
+    setFrameUrl(nextUrl);
+
+    return () => {
+      URL.revokeObjectURL(nextUrl);
+    };
+  }, [frameHtml, isWeb]);
+
+  if (!isWeb) {
+    return null;
+  }
 
   return (
     <View style={styles.root}>
@@ -35,9 +53,9 @@ export default function ModeAWebScreen() {
       <View style={styles.frameWrap}>
         <iframe
           title="ISL Bridge Mode A"
-          srcDoc={frameHtml}
+          src={frameUrl || undefined}
           style={frameStyle}
-          allow="camera; microphone; autoplay"
+          allow="camera *; microphone *; autoplay *"
         />
       </View>
     </View>
