@@ -1,5 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as MediaPipeDrawing from '@mediapipe/drawing_utils';
+import * as MediaPipeHands from '@mediapipe/hands';
 import { AppContext } from '../AppContext';
 import { BACKEND_URL, HAS_BACKEND_URL } from '../config';
 import { WEB_DISPLAY_FONT, WEB_FONT_FAMILY } from '../design';
@@ -32,13 +34,9 @@ const SIGN_TO_HINDI = {
   WATER: 'WATER',
 };
 
-const HAND_SOURCES = [
-  'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js',
-  'https://unpkg.com/@mediapipe/hands/hands.js',
-];
-const DRAWING_SOURCES = [
-  'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js',
-  'https://unpkg.com/@mediapipe/drawing_utils/drawing_utils.js',
+const MEDIAPIPE_HANDS_BASES = [
+  'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240',
+  'https://unpkg.com/@mediapipe/hands@0.4.1675469240',
 ];
 
 const TEXT = {
@@ -90,35 +88,6 @@ const TEXT = {
   },
 };
 
-function loadScript(urls, globalName) {
-  if (globalName && window[globalName]) {
-    return Promise.resolve(urls[0]);
-  }
-
-  const queue = [...urls];
-  return new Promise((resolve, reject) => {
-    const attempt = () => {
-      const next = queue.shift();
-      if (!next) {
-        reject(new Error(`Unable to load ${globalName}`));
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = next;
-      script.async = true;
-      script.onload = () => resolve(next);
-      script.onerror = () => {
-        script.remove();
-        attempt();
-      };
-      document.head.appendChild(script);
-    };
-
-    attempt();
-  });
-}
-
 export default function ModeAWebScreen() {
   const { theme, lang, isDark, setIsDark, setLang } = useContext(AppContext);
   const t = TEXT[lang];
@@ -128,7 +97,6 @@ export default function ModeAWebScreen() {
   const streamRef = useRef(null);
   const handsRef = useRef(null);
   const demoTimerRef = useRef(null);
-  const handsBaseRef = useRef('https://cdn.jsdelivr.net/npm/@mediapipe/hands/');
   const loopActiveRef = useRef(false);
   const busyRef = useRef(false);
   const sendingRef = useRef(false);
@@ -279,8 +247,8 @@ export default function ModeAWebScreen() {
       return;
     }
 
-    window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS || [], { color: '#22C7C9', lineWidth: 2 });
-    window.drawLandmarks(ctx, landmarks, { color: '#F59E0B', lineWidth: 1, radius: 3 });
+    MediaPipeDrawing.drawConnectors(ctx, landmarks, MediaPipeHands.HAND_CONNECTIONS || [], { color: '#22C7C9', lineWidth: 2 });
+    MediaPipeDrawing.drawLandmarks(ctx, landmarks, { color: '#F59E0B', lineWidth: 1, radius: 3 });
     setTrackingStatus('ready');
     if (!signing) {
       setMessage(t.trackingReady);
@@ -332,29 +300,33 @@ export default function ModeAWebScreen() {
     setTrackingStatus('loading');
     setMessage(t.trackingLoading);
 
-    try {
-      const handsUrl = await loadScript(HAND_SOURCES, 'Hands');
-      await loadScript(DRAWING_SOURCES, 'drawConnectors');
-      handsBaseRef.current = handsUrl.replace(/hands\.js(?:\?.*)?$/, '');
+    for (const base of MEDIAPIPE_HANDS_BASES) {
+      const hands = new MediaPipeHands.Hands({
+        locateFile: (file) => `${base}/${file}`,
+      });
 
-      const hands = new window.Hands({
-        locateFile: (file) => `${handsBaseRef.current}${file}`,
-      });
-      hands.setOptions({
-        maxNumHands: 1,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.7,
-        minTrackingConfidence: 0.5,
-      });
-      hands.onResults(onResults);
-      handsRef.current = hands;
-      setTrackingStatus('ready');
-      return true;
-    } catch {
-      setTrackingStatus('error');
-      setMessage(t.trackingError);
-      return false;
+      try {
+        hands.setOptions({
+          selfieMode: true,
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.6,
+          minTrackingConfidence: 0.5,
+        });
+        hands.onResults(onResults);
+        await hands.initialize();
+        handsRef.current = hands;
+        setTrackingStatus('ready');
+        setMessage(t.trackingReady);
+        return true;
+      } catch {
+        await hands.close().catch(() => {});
+      }
     }
+
+    setTrackingStatus('error');
+    setMessage(t.trackingError);
+    return false;
   };
 
   const startCamera = async () => {
