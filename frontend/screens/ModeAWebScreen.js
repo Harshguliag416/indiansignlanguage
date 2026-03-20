@@ -42,11 +42,9 @@ const MEDIAPIPE_HANDS_BASES = [
 const TEXT = {
   en: {
     title: 'Mute -> Hearing',
-    subtitle: 'Camera plus MediaPipe hand tracking for live landmark prediction.',
+    subtitle: 'Turn on the camera to start live hand tracking and sign prediction automatically.',
     startCamera: 'Start Camera',
     stopCamera: 'Stop Camera',
-    startSigning: 'Start Signing',
-    stopSigning: 'Stop Signing',
     clear: 'Clear',
     backendMissing: 'Backend URL missing.',
     backendOffline: 'Backend offline.',
@@ -56,6 +54,7 @@ const TEXT = {
     trackingMissing: 'Show one clear hand.',
     trackingError: 'Hand tracking failed.',
     cameraBlocked: 'Camera blocked.',
+    autoLiveOn: 'Camera live. Hand tracking and sign prediction are active.',
     outputLabel: 'Detected Sign',
     outputPlaceholder: 'Result will appear here.',
     confidence: 'Confidence',
@@ -65,11 +64,9 @@ const TEXT = {
   },
   hi: {
     title: 'Mute -> Hearing',
-    subtitle: 'Live landmark prediction ke liye camera aur MediaPipe hand tracking.',
+    subtitle: 'Camera on karte hi live hand tracking aur sign prediction apne aap shuru ho jaati hai.',
     startCamera: 'Camera Chalu Karein',
     stopCamera: 'Camera Band Karein',
-    startSigning: 'Signing Chalu Karein',
-    stopSigning: 'Signing Rokein',
     clear: 'Saaf Karein',
     backendMissing: 'Backend URL missing hai.',
     backendOffline: 'Backend offline hai.',
@@ -79,6 +76,7 @@ const TEXT = {
     trackingMissing: 'Ek haath clearly dikhaiye.',
     trackingError: 'Hand tracking fail ho gayi.',
     cameraBlocked: 'Camera blocked hai.',
+    autoLiveOn: 'Camera live hai. Hand tracking aur sign prediction active hain.',
     outputLabel: 'Pehchana Gaya Sign',
     outputPlaceholder: 'Result yahan dikhai dega.',
     confidence: 'Confidence',
@@ -169,6 +167,7 @@ export default function ModeAWebScreen() {
   const stopCamera = () => {
     loopActiveRef.current = false;
     setSigning(false);
+    sendingRef.current = false;
     stopDemo();
     clearCanvas();
 
@@ -187,7 +186,7 @@ export default function ModeAWebScreen() {
   };
 
   const sendPrediction = async (coords) => {
-    if (!signing || sendingRef.current || !HAS_BACKEND_URL) {
+    if (!cameraStarted || !signing || sendingRef.current || !HAS_BACKEND_URL) {
       return;
     }
 
@@ -351,51 +350,31 @@ export default function ModeAWebScreen() {
       setCameraStarted(true);
       const ok = await ensureHands();
       if (ok) {
+        const nextBackend = await checkBackend();
+        setSigning(true);
+        setMessage(nextBackend === 'ready' ? t.autoLiveOn : nextBackend === 'missing' ? t.backendMissing : t.backendOffline);
         startLoop();
+        return true;
       }
-      return ok;
+      setSigning(false);
+      return false;
     } catch {
+      setSigning(false);
       setMessage(t.cameraBlocked);
       return false;
     }
   };
 
   const clearAll = () => {
-    setSigning(false);
     stopDemo();
     setResult(null);
     setHistory([]);
-    setMessage(cameraStarted ? t.trackingReady : '');
+    setMessage(cameraStarted ? t.autoLiveOn : '');
     window.speechSynthesis?.cancel?.();
   };
 
-  const stopSigning = () => {
-    setSigning(false);
-    sendingRef.current = false;
-    setMessage(cameraStarted ? t.trackingReady : '');
-  };
-
-  const startSigning = async () => {
-    stopDemo();
-    if (!cameraStarted) {
-      const ok = await startCamera();
-      if (!ok) {
-        return;
-      }
-    }
-
-    const ok = await ensureHands();
-    if (!ok) {
-      return;
-    }
-
-    const nextBackend = await checkBackend();
-    setSigning(true);
-    setMessage(nextBackend === 'ready' ? t.backendReady : nextBackend === 'missing' ? t.backendMissing : t.backendOffline);
-    startLoop();
-  };
-
   const runDemo = (preset) => {
+    const shouldResumeLive = cameraStarted;
     setSigning(false);
     stopDemo();
     setDemoId(preset.id);
@@ -411,6 +390,12 @@ export default function ModeAWebScreen() {
         window.clearInterval(demoTimerRef.current);
         demoTimerRef.current = null;
         window.setTimeout(() => speakText(preset.word), 300);
+        if (shouldResumeLive) {
+          window.setTimeout(() => {
+            setSigning(true);
+            setMessage(t.autoLiveOn);
+          }, 1200);
+        }
         return;
       }
 
@@ -484,9 +469,6 @@ export default function ModeAWebScreen() {
             <View style={styles.actionRow}>
               <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: cameraStarted ? theme.card : theme.accentA, borderColor: theme.accentA }]} onPress={cameraStarted ? stopCamera : startCamera}>
                 <Text style={[styles.primaryBtnText, { color: cameraStarted ? theme.accentA : '#FFFFFF' }]}>{cameraStarted ? t.stopCamera : t.startCamera}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: signing ? theme.card : theme.accentB, borderColor: theme.accentB }]} onPress={signing ? stopSigning : startSigning}>
-                <Text style={[styles.primaryBtnText, { color: signing ? theme.accentB : '#FFFFFF' }]}>{signing ? t.stopSigning : t.startSigning}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.clearBtn, { backgroundColor: theme.bg, borderColor: theme.border }]} onPress={clearAll}>
                 <Text style={[styles.clearBtnText, { color: theme.text }]}>{t.clear}</Text>
