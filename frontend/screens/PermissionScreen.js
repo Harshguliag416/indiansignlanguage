@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useCameraPermissions } from 'expo-camera';
-import { useSpeechRecognitionPermissions } from 'expo-speech-recognition';
+import * as SpeechRecognition from 'expo-speech-recognition';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../AppContext';
 
@@ -52,9 +52,12 @@ export default function PermissionScreen({ navigation, route }) {
   const { theme, lang, isDark } = useContext(AppContext);
   const t = LANG[lang];
   const isWeb = Platform.OS === 'web';
+  const useMicPermissions =
+    SpeechRecognition.useSpeechRecognitionPermissions ||
+    (() => [{ granted: isWeb }, async () => ({ granted: isWeb })]);
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [micPermission, requestMicPermission] = useSpeechRecognitionPermissions();
+  const [micPermission, requestMicPermission] = useMicPermissions();
   const [speakerGranted, setSpeakerGranted] = useState(isWeb);
 
   const permissions = [

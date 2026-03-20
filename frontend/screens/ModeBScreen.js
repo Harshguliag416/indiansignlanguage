@@ -8,7 +8,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { useSpeechRecognition } from 'expo-speech-recognition';
+import * as SpeechRecognition from 'expo-speech-recognition';
 import { AppContext } from '../AppContext';
 
 const LANG = {
@@ -78,7 +78,9 @@ export default function ModeBScreen() {
   const restartTimeoutRef = useRef(null);
   const shouldRestartRef = useRef(false);
 
-  const speechHook = useSpeechRecognition ? useSpeechRecognition({ locale }) : null;
+  const speechHook = SpeechRecognition.useSpeechRecognition
+    ? SpeechRecognition.useSpeechRecognition({ locale })
+    : null;
   const nativeStartListening = speechHook?.start || (() => console.warn('Speech recognition is not supported.'));
   const nativeStopListening = speechHook?.stop || (() => {});
   const nativeIsRecording = speechHook?.isRecording || false;
