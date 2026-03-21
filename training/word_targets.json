@@ -1,0 +1,28 @@
+{
+  "targets": [
+    {
+      "label": "hello",
+      "aliases": ["hello", "hello_hi"]
+    },
+    {
+      "label": "help",
+      "aliases": ["help"]
+    },
+    {
+      "label": "no",
+      "aliases": ["no"]
+    },
+    {
+      "label": "water",
+      "aliases": ["water"]
+    },
+    {
+      "label": "yes",
+      "aliases": ["yes"]
+    },
+    {
+      "label": "you",
+      "aliases": ["you"]
+    }
+  ]
+}
