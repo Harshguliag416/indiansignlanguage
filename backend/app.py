@@ -56,20 +56,19 @@ landmark_model_lock = threading.Lock()
 
 
 def build_landmark_model(num_classes):
-    from tensorflow.keras.layers import BatchNormalization, Dense, Dropout
-    from tensorflow.keras.models import Sequential
+    from tensorflow import keras
 
-    return Sequential(
+    return keras.Sequential(
         [
-            Dense(256, activation="relu", input_shape=(63,)),
-            BatchNormalization(),
-            Dropout(0.3),
-            Dense(128, activation="relu"),
-            BatchNormalization(),
-            Dropout(0.3),
-            Dense(64, activation="relu"),
-            Dropout(0.2),
-            Dense(num_classes, activation="softmax"),
+            keras.layers.Dense(256, activation="relu", input_shape=(63,)),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dropout(0.3),
+            keras.layers.Dense(128, activation="relu"),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dropout(0.3),
+            keras.layers.Dense(64, activation="relu"),
+            keras.layers.Dropout(0.2),
+            keras.layers.Dense(num_classes, activation="softmax"),
         ]
     )
 

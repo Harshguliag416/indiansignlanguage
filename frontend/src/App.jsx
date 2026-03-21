@@ -811,7 +811,12 @@ function App() {
   }
 
   async function sendPrediction(frames, sessionId) {
-    const predictionInput = backendConfigRef.current.predictionInput || "landmarks";
+    const supportedInputs = backendHealth.supportedInputs || [];
+    const useLandmarkAlphabet =
+      recognitionTarget === "alphabet" && supportedInputs.includes("landmarks");
+    const predictionInput = useLandmarkAlphabet
+      ? "landmarks"
+      : backendConfigRef.current.predictionInput || "landmarks";
     const latestHand = frames[frames.length - 1]?.hands?.[0];
     const flattened = flattenLatestLandmarks(frames);
     const requestBody =
