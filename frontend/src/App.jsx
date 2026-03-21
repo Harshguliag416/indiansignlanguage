@@ -1,10 +1,10 @@
-﻿import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
+import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const API_URL = (import.meta.env.VITE_API_URL || "").trim() || (import.meta.env.DEV ? "http://localhost:5000" : "https://isl-bridge-backend-ol16.onrender.com");
 const MAX_SEQUENCE_FRAMES = 12;
 const MIN_SEQUENCE_FRAMES = 6;
-const STABLE_PREDICTION_WINDOW = 4;
+const STABLE_PREDICTION_WINDOW = 2;
 const HAND_CONNECTIONS = [
   [0, 1], [1, 2], [2, 3], [3, 4],
   [0, 5], [5, 6], [6, 7], [7, 8],
@@ -847,6 +847,7 @@ function App() {
       if (!predictionLabel) {
         return;
       }
+      setError("");
 
       const confidenceScore = Math.max(
         0,
@@ -859,15 +860,22 @@ function App() {
       ];
       predictionWindowRef.current = nextWindow;
       const stablePrediction = getStablePrediction(nextWindow);
+      const effectivePrediction =
+        stablePrediction ||
+        (recognitionTarget === "alphabet" && confidenceScore >= 0.72 ? predictionLabel : null);
 
       if (
-        stablePrediction &&
-        stablePrediction !== "Gesture not recognised" &&
-        stablePrediction !== lastPhraseRef.current
+        effectivePrediction &&
+        effectivePrediction !== "Gesture not recognised" &&
+        effectivePrediction !== lastPhraseRef.current
       ) {
-        applyPrediction(stablePrediction, confidenceScore, data.mode || "sign_prediction");
+        applyPrediction(effectivePrediction, confidenceScore, data.mode || "sign_prediction");
+        setStatus(`Detected ${effectivePrediction}`);
       } else if (stablePrediction) {
         setConfidence(confidenceScore);
+      } else {
+        setConfidence(confidenceScore);
+        setStatus(`Reading ${predictionLabel}...`);
       }
     } catch (requestError) {
       if (trackingSessionRef.current === sessionId && cameraRunningRef.current) {
