@@ -372,6 +372,8 @@ function App() {
     checked: false,
     configured: Boolean(API_URL),
     modelType: "heuristic",
+    predictionInput: "landmarks",
+    supportedInputs: ["landmarks"],
     supportedTargets: ["alphabet"],
   });
   const [error, setError] = useState("");
@@ -379,6 +381,7 @@ function App() {
   const t = COPY[language];
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const captureCanvasRef = useRef(null);
   const streamRef = useRef(null);
   const handLandmarkerRef = useRef(null);
   const animationRef = useRef(null);
@@ -389,6 +392,7 @@ function App() {
   const lastPhraseRef = useRef("");
   const lastSpokenRef = useRef("");
   const lastSpeechSavedRef = useRef("");
+  const backendConfigRef = useRef({ predictionInput: "landmarks" });
   const sequenceBufferRef = useRef([]);
   const predictionWindowRef = useRef([]);
   const demoPredictionWindowRef = useRef([]);
@@ -419,6 +423,12 @@ function App() {
   }, [language]);
 
   useEffect(() => {
+    backendConfigRef.current = {
+      predictionInput: backendHealth.predictionInput || "landmarks",
+    };
+  }, [backendHealth.predictionInput]);
+
+  useEffect(() => {
     let ignore = false;
 
     if (!API_URL) {
@@ -427,6 +437,8 @@ function App() {
         checked: true,
         configured: false,
         modelType: "heuristic",
+        predictionInput: "landmarks",
+        supportedInputs: ["landmarks"],
         supportedTargets: ["alphabet"],
       });
       return () => {
@@ -438,12 +450,21 @@ function App() {
       .then((response) => response.json())
       .then((data) => {
         if (!ignore) {
+          const predictionInput = data.prediction_input || "landmarks";
           setBackendHealth({
             ok: true,
             checked: true,
             configured: true,
-            modelType: data.model === "loaded" ? "tensorflow" : "heuristic",
-            supportedTargets: ["alphabet"],
+            modelType: data.model_type || (data.model === "loaded" ? "tensorflow" : "heuristic"),
+            predictionInput,
+            supportedInputs:
+              Array.isArray(data.supported_inputs) && data.supported_inputs.length
+                ? data.supported_inputs
+                : [predictionInput],
+            supportedTargets:
+              Array.isArray(data.supported_targets) && data.supported_targets.length
+                ? data.supported_targets
+                : ["alphabet"],
           });
         }
       })
@@ -454,6 +475,8 @@ function App() {
             checked: true,
             configured: true,
             modelType: "heuristic",
+            predictionInput: "landmarks",
+            supportedInputs: ["landmarks"],
             supportedTargets: ["alphabet"],
           });
         }
@@ -667,6 +690,49 @@ function App() {
     });
   }
 
+  function getHandCropBox(hand, video) {
+    const xs = hand.landmarks.map((point) => point.x * video.videoWidth);
+    const ys = hand.landmarks.map((point) => point.y * video.videoHeight);
+    const minX = Math.max(0, Math.min(...xs));
+    const maxX = Math.min(video.videoWidth, Math.max(...xs));
+    const minY = Math.max(0, Math.min(...ys));
+    const maxY = Math.min(video.videoHeight, Math.max(...ys));
+    const boxSize = Math.max(96, maxX - minX, maxY - minY);
+    const paddedSize = Math.min(
+      Math.max(video.videoWidth, video.videoHeight),
+      boxSize * 1.85,
+    );
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const x = Math.max(0, Math.min(video.videoWidth - paddedSize, centerX - paddedSize / 2));
+    const y = Math.max(0, Math.min(video.videoHeight - paddedSize, centerY - paddedSize / 2));
+
+    return { x, y, size: paddedSize };
+  }
+
+  function captureHandCrop(hand) {
+    const video = videoRef.current;
+    if (!video || !hand || !video.videoWidth || !video.videoHeight) {
+      return "";
+    }
+
+    const { x, y, size } = getHandCropBox(hand, video);
+    const captureCanvas = captureCanvasRef.current || document.createElement("canvas");
+    captureCanvasRef.current = captureCanvas;
+    captureCanvas.width = 128;
+    captureCanvas.height = 128;
+
+    const ctx = captureCanvas.getContext("2d");
+    if (!ctx) {
+      return "";
+    }
+
+    ctx.fillStyle = "#08121c";
+    ctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
+    ctx.drawImage(video, x, y, size, size, 0, 0, captureCanvas.width, captureCanvas.height);
+    return captureCanvas.toDataURL("image/jpeg", 0.92);
+  }
+
   function runDetectionLoop(handLandmarker, sessionId) {
     const detect = () => {
       if (!cameraRunningRef.current || trackingSessionRef.current !== sessionId) {
@@ -717,7 +783,7 @@ function App() {
         ) {
           inFlightRef.current = true;
           lastPredictionRef.current = now;
-          void sendLandmarks(sequenceBufferRef.current, sessionId).finally(() => {
+          void sendPrediction(sequenceBufferRef.current, sessionId).finally(() => {
             if (trackingSessionRef.current === sessionId) {
               inFlightRef.current = false;
             }
@@ -738,9 +804,20 @@ function App() {
     animationRef.current = requestAnimationFrame(detect);
   }
 
-  async function sendLandmarks(frames, sessionId) {
+  async function sendPrediction(frames, sessionId) {
+    const predictionInput = backendConfigRef.current.predictionInput || "landmarks";
+    const latestHand = frames[frames.length - 1]?.hands?.[0];
     const flattened = flattenLatestLandmarks(frames);
-    if (flattened.length !== 63) {
+    const requestBody =
+      predictionInput === "image"
+        ? { image: captureHandCrop(latestHand), target: recognitionTarget }
+        : { landmarks: flattened, target: recognitionTarget };
+
+    if (predictionInput === "image" && !requestBody.image) {
+      return;
+    }
+
+    if (predictionInput !== "image" && requestBody.landmarks.length !== 63) {
       return;
     }
 
@@ -748,7 +825,7 @@ function App() {
       const response = await fetch(`${API_URL}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ landmarks: flattened }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -833,7 +910,10 @@ function App() {
     {
       id: "general",
       label: language === "hi" ? "ÃƒÂ Ã‚Â¤Ã‚Â¶ÃƒÂ Ã‚Â¤Ã‚Â¬ÃƒÂ Ã‚Â¥Ã‚ÂÃƒÂ Ã‚Â¤Ã‚Â¦ / ÃƒÂ Ã‚Â¤Ã‚ÂµÃƒÂ Ã‚Â¤Ã‚Â¾ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¥Ã‚ÂÃƒÂ Ã‚Â¤Ã‚Â¯" : "Words / Phrases",
-      disabled: false,
+      disabled:
+        backendHealth.checked &&
+        backendHealth.ok &&
+        !backendHealth.supportedTargets.includes("general"),
     },
     {
       id: "alphabet",
@@ -895,7 +975,7 @@ function App() {
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
                 <p className="text-sm text-slate-300">
-                  {backendHealth.modelType === "tensorflow" ? t.trained : t.heuristic}
+                  {backendHealth.modelType.includes("tensorflow") ? t.trained : t.heuristic}
                 </p>
                 <p className="mt-2 text-2xl font-bold">{status}</p>
               </div>
@@ -1078,7 +1158,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
