@@ -1,4 +1,4 @@
-﻿import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -84,7 +84,13 @@ const DEMO_PRESETS = [
   { id: 'HELP', label: 'HELP', sequence: ['H', 'E', 'L', 'P'], word: 'HELP' },
   { id: 'WATER', label: 'WATER', sequence: ['W', 'A', 'T', 'E', 'R'], word: 'WATER' },
 ];
-
+function normalizeConfidence(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+  return numeric <= 1 ? Math.round(numeric * 100) : Math.round(numeric);
+}
 export default function ModeAScreen() {
   const { theme, lang, isDark, setIsDark, setLang } = useContext(AppContext);
   const t = LANG[lang];
@@ -95,6 +101,9 @@ export default function ModeAScreen() {
   const [demoPresetId, setDemoPresetId] = useState(null);
   const intervalRef = useRef(null);
   const demoTimerRef = useRef(null);
+  const cameraRef = useRef(null);
+  const captureBusyRef = useRef(false);
+  const lastSpokenRef = useRef('');
   const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
@@ -153,48 +162,66 @@ export default function ModeAScreen() {
       setStatus('backendMissing');
       return;
     }
-
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-
     setActive(true);
     setStatus('detecting');
     setResult(null);
-
+    lastSpokenRef.current = '';
     intervalRef.current = setInterval(async () => {
+      if (!cameraRef.current || captureBusyRef.current) {
+        return;
+      }
+      let timeoutId;
       try {
-        const fakeLandmarks = Array.from({ length: 63 }, () => Math.random());
+        captureBusyRef.current = true;
+        const photo = await cameraRef.current.takePictureAsync({
+          base64: true,
+          quality: 0.6,
+          skipProcessing: true,
+        });
+        if (!photo?.base64) {
+          throw new Error('No camera frame captured');
+        }
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2500);
-
-        const response = await fetch(`${BACKEND_URL}/predict`, {
+        timeoutId = setTimeout(() => controller.abort(), 4000);
+        const response = await fetch(${BACKEND_URL}/predict, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ landmarks: fakeLandmarks }),
+          body: JSON.stringify({
+            image: data:image/jpeg;base64,,
+            target: 'alphabet',
+          }),
           signal: controller.signal,
         });
-
-        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error(Prediction failed with status );
+        }
         const data = await response.json();
-
+        const confidence = normalizeConfidence(data.confidence);
         setResult({
           sign: data.sign,
-          confidence: data.confidence,
+          confidence,
           mode: data.mode,
           hindi: SIGN_TO_HINDI[data.sign] || data.sign,
         });
+        setBackendOk(true);
         setStatus('detecting');
-
-        if (data.confidence > 80) {
+        if (confidence >= 80 && lastSpokenRef.current !== data.sign) {
+          lastSpokenRef.current = data.sign;
           speakText(lang === 'hi' ? (SIGN_TO_HINDI[data.sign] || data.sign) : data.sign);
         }
       } catch {
         setStatus('noHand');
+      } finally {
+        captureBusyRef.current = false;
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
       }
-    }, 2000);
+    }, 1500);
   };
-
   const clear = () => {
     stop();
     stopDemo();
@@ -288,7 +315,7 @@ export default function ModeAScreen() {
         <Text style={[styles.status, { color: theme.subtext }]}>{statusText}</Text>
 
         {permission?.granted ? (
-          <CameraView style={styles.cameraBox} facing="front">
+          <CameraView ref={cameraRef} style={styles.cameraBox} facing="front">
             <View style={styles.cameraTopBar}>
               <Text style={[styles.cameraTopText, { color: theme.accentA }]}>{active ? t.live : t.preview}</Text>
             </View>
@@ -349,7 +376,7 @@ export default function ModeAScreen() {
                   {t.confidence}: {result.confidence}%
                 </Text>
                 <Text style={[styles.modeBadgeSmall, { color: theme.subtext, borderColor: theme.border }]}>
-                  {result.mode === 'model' ? 'AI' : 'Mock'}
+                  {result.mode === 'demo' ? 'Mock' : 'AI'}
                 </Text>
                 <TouchableOpacity
                   style={[styles.speakBtn, { backgroundColor: theme.accentABg, borderColor: theme.accentA + '40' }]}
@@ -440,3 +467,6 @@ const styles = StyleSheet.create({
   speakBtn: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 4 },
   speakBtnText: { fontSize: 11 },
 });
+
+
+

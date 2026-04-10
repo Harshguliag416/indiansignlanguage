@@ -19,7 +19,7 @@ IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.webp'}
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Train a sentence model from CSLTR frame directories.')
     parser.add_argument('--dataset-dir', type=Path, default=Path('public_datasets') / 'isl_csltr' / 'ISL_CSLRT_Corpus' / 'Frames_Sentence_Level')
-    parser.add_argument('--output-dir', type=Path, default=Path('training_output') / 'sentences_full')
+    parser.add_argument('--output-dir', type=Path, default=Path('model_outputs') / 'sentences_full')
     parser.add_argument('--image-size', type=int, default=96)
     parser.add_argument('--num-frames', type=int, default=16)
     parser.add_argument('--batch-size', type=int, default=8)

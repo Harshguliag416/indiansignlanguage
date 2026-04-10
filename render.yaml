@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: isl-bridge-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ISL_IMAGE_MODEL_DIR
+        value: ../model_outputs/alnum_deadline_10h_20260321_020023
+    plan: free

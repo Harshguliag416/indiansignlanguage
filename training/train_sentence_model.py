@@ -27,7 +27,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("training_output") / "sentences",
+        default=Path("model_outputs") / "sentences",
         help="Directory where the sentence model and metadata will be written.",
     )
     parser.add_argument("--image-size", type=int, default=96)

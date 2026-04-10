@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import threading
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from io import BytesIO
 
 import numpy as np
@@ -374,7 +374,23 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    """Accept either:
+    - Multipart form-data: `image` (file upload) + optional `target` field
+    - JSON body: `image` (base64 string) or `landmarks` (array), + optional `target`
+    """
     try:
+        # --- Multipart file upload (curl, Postman, simple HTML form) ---
+        if request.files and "image" in request.files:
+            file = request.files["image"]
+            target = str(request.form.get("target") or "alphabet").strip().lower()
+            image_bytes = file.read()
+            image_b64 = "data:image/jpeg;base64," + b64encode(image_bytes).decode("utf-8")
+
+            if target in {"general", "word", "words", "phrase", "phrases"}:
+                return jsonify(predict_from_word_payload(image_b64))
+            return jsonify(predict_from_image_payload(image_b64))
+
+        # --- JSON body (base64 image or landmarks) ---
         data = request.get_json(silent=True) or {}
         target = str(data.get("target") or "alphabet").strip().lower()
 
@@ -390,7 +406,7 @@ def predict():
         if "landmarks" in data:
             return jsonify(predict_from_landmarks_payload(data["landmarks"]))
 
-        return jsonify({"error": "Provide either image or landmarks"}), 400
+        return jsonify({"error": "Provide image (file upload or base64 JSON) or landmarks"}), 400
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
     except RuntimeError as error:

@@ -7,7 +7,7 @@ const PRODUCTION_FALLBACK_BACKEND_URLS = [
 const unique = (values) => [...new Set(values.filter(Boolean))];
 
 const resolveBackendUrls = () => {
-  const explicitUrl = process.env.EXPO_PUBLIC_BACKEND_URL?.trim();
+  const explicitUrl = (import.meta.env?.VITE_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL)?.trim();
   if (explicitUrl) {
     return [trimTrailingSlash(explicitUrl)];
   }

@@ -1,0 +1,39 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="refresh" content="15" />
+  <title>ISL Bridge Training Progress</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+    .wrap { max-width: 720px; margin: 40px auto; padding: 24px; }
+    .card { background: #111827; border: 1px solid #1f2937; border-radius: 16px; padding: 24px; box-shadow: 0 20px 45px rgba(0,0,0,0.2); }
+    .bar { height: 24px; border-radius: 999px; background: #1f2937; overflow: hidden; margin: 16px 0 20px; }
+    .fill { height: 100%; width: 100%; background: linear-gradient(90deg, #22d3ee, #10b981); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .metric { background: #0b1220; border-radius: 12px; padding: 12px 14px; }
+    .label { color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .meta { color: #94a3b8; font-size: 14px; margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="label">Training Status</div>
+      <div class="value">STOPPED - 100%</div>
+      <div class="bar"><div class="fill"></div></div>
+      <div class="grid">
+        <div class="metric"><div class="label">Epoch</div><div class="value">3 / 3</div></div>
+        <div class="metric"><div class="label">Step</div><div class="value">72 / 72</div></div>
+        <div class="metric"><div class="label">Accuracy</div><div class="value">93.55%</div></div>
+        <div class="metric"><div class="label">Top 3</div><div class="value">98.28%</div></div>
+        <div class="metric"><div class="label">Loss</div><div class="value">0.2000</div></div>
+        <div class="metric"><div class="label">ETA</div><div class="value">21 Mar 05:30</div></div>
+      </div>
+      <div class="meta">Auto-refreshes every 15 seconds. Last update: 2026-03-21T00:00:00.0699385Z</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -24,7 +24,7 @@ Train the first model:
 ```powershell
 python training\train_alnum_model.py `
   --dataset-dir "training_data\alnum_stage1" `
-  --output-dir "training_output\alnum_stage1" `
+  --output-dir "model_outputs\alnum_stage1" `
   --epochs 20 `
   --image-size 128 `
   --batch-size 64
@@ -55,7 +55,7 @@ Train the improved model:
 ```powershell
 python training\train_alnum_model.py `
   --dataset-dir "training_data\alnum_stage2" `
-  --output-dir "training_output\alnum_stage2" `
+  --output-dir "model_outputs\alnum_stage2" `
   --epochs 24 `
   --image-size 128 `
   --batch-size 64
@@ -87,7 +87,7 @@ Train the sentence model:
 ```powershell
 python training\train_sentence_model.py `
   --dataset-dir "training_data\sentences_top20" `
-  --output-dir "training_output\sentences_top20" `
+  --output-dir "model_outputs\sentences_top20" `
   --epochs 15 `
   --num-frames 16 `
   --image-size 96 `

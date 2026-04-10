@@ -1,0 +1,15 @@
+﻿{
+    "status":  "stopped",
+    "updated_at":  "2026-03-21T00:00:00.0699385Z",
+    "epoch":  3,
+    "epochs":  3,
+    "step":  72,
+    "steps_per_epoch":  72,
+    "percent":  100,
+    "accuracy":  0.9355,
+    "top3_accuracy":  0.9828,
+    "loss":  0.2,
+    "epoch_remaining":  "1:03",
+    "eta":  "21 Mar 05:30",
+    "log_path":  "h:\\HACKATHON\\isl-bridge\\training_logs\\alnum_deadline_10h_20260321_020023.out.log"
+}
